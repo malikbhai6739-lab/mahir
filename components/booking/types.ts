@@ -27,6 +27,7 @@ export type Schedule = {
 };
 
 export type BookingSnapshot = {
+  bookingId?: string;
   items: CartLineItem[];
   address: Address;
   schedule: Schedule;

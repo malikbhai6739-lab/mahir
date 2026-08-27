@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { CartProvider } from "@/components/cart/cart-context";
+import { OrderProvider } from "@/components/orders/order-context";
 import "./globals.css";
 
 const geist = Geist({
@@ -35,7 +36,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       data-scroll-behavior="smooth"
     >
       <body>
-        <CartProvider>{children}</CartProvider>
+        <CartProvider>
+          <OrderProvider>{children}</OrderProvider>
+        </CartProvider>
       </body>
     </html>
   );

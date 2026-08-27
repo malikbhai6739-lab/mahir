@@ -68,7 +68,7 @@ export function MobileMenu({ items }: MobileMenuProps) {
         <>
           <button
             type="button"
-            aria-label="Close navigation menu"
+            aria-label="Close menu overlay"
             onClick={() => setIsOpen(false)}
             className="fixed inset-0 top-[4.75rem] z-40 cursor-default bg-foreground/30"
           />

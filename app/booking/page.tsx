@@ -9,6 +9,7 @@ import { ReviewStep } from "@/components/booking/review-step";
 import { ScheduleStep } from "@/components/booking/schedule-step";
 import type { Address, BookingSnapshot, CustomerDetails, Schedule } from "@/components/booking/types";
 import { useCart } from "@/components/cart/cart-context";
+import { useOrders } from "@/components/orders/order-context";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 
@@ -53,6 +54,7 @@ const initialCustomer: CustomerDetails = {
 
 export default function BookingPage() {
   const { items, subtotal, discount, estimatedTotal, hydrated } = useCart();
+  const { addOrder } = useOrders();
   const [step, setStep] = useState(1);
   const [selectedAddressId, setSelectedAddressId] = useState("home");
   const [showNewAddress, setShowNewAddress] = useState(false);
@@ -104,7 +106,34 @@ export default function BookingPage() {
   const continueFromSchedule = () => setStep(3);
 
   const confirmBooking = () => {
-    setBooking({ items, address: activeAddress, schedule, customer, estimatedTotal });
+    const bookingId = "MHR-2026-00125";
+    const snapshot = { bookingId, items, address: activeAddress, schedule, customer, estimatedTotal };
+    addOrder({
+      id: `order-${bookingId.toLowerCase()}`,
+      bookingId,
+      serviceTitle: items.map((item) => item.title).join(", "),
+      serviceSlug: items[0].slug,
+      serviceImage: items[0].image,
+      quantity: items.reduce((sum, item) => sum + item.quantity, 0),
+      status: "confirmed",
+      date: `${schedule.dateLabel}, ${schedule.dateValue}`,
+      time: schedule.slot,
+      address: activeAddress.fullAddress,
+      city: activeAddress.city,
+      subtotal,
+      discount,
+      serviceFee: 0,
+      total: estimatedTotal,
+      timeline: [
+        { label: "Booking Confirmed", completed: true, current: true },
+        { label: "Professional Assigned", completed: false },
+        { label: "Professional On the Way", completed: false },
+        { label: "Service Started", completed: false },
+        { label: "Completed", completed: false },
+      ],
+      createdAt: new Date().toLocaleDateString("en-PK", { month: "short", day: "numeric", year: "numeric" }),
+    });
+    setBooking(snapshot);
     setStep(4);
   };
 

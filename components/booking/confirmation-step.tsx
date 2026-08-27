@@ -16,7 +16,7 @@ export function ConfirmationStep({ booking }: ConfirmationStepProps) {
         <h1 id="confirmation-heading" className="mt-3 text-3xl font-bold tracking-[-0.02em] text-foreground sm:text-4xl">Your Service is Booked!</h1>
         <p className="mt-4 text-base leading-7 text-muted">Your request has been recorded. A professional will be assigned shortly.</p>
         <div className="mt-8 grid gap-4 text-left sm:grid-cols-2">
-          <div className="rounded-xl bg-background p-4"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Booking ID</p><p className="mt-2 font-bold text-foreground">MHR-2026-00124</p></div>
+          <div className="rounded-xl bg-background p-4"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Booking ID</p><p className="mt-2 font-bold text-foreground">{booking.bookingId ?? "MHR-2026-00125"}</p></div>
           <div className="rounded-xl bg-background p-4"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Estimated total</p><p className="mt-2 font-bold text-foreground">PKR {priceFormatter.format(booking.estimatedTotal)}</p></div>
           <div className="rounded-xl bg-background p-4"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Service</p><p className="mt-2 font-semibold text-foreground">{serviceNames}</p></div>
           <div className="rounded-xl bg-background p-4"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">When</p><p className="mt-2 font-semibold text-foreground">{booking.schedule.dateLabel}, {booking.schedule.dateValue}<br />{booking.schedule.slot}</p></div>

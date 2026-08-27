@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { useOrders } from "@/components/orders/order-context";
 import { OrderSummary } from "@/components/orders/order-summary";
 import { OrderTimeline } from "@/components/orders/order-timeline";
 import { ProfessionalCard } from "@/components/orders/professional-card";
@@ -10,7 +11,9 @@ import { getOrderStatusLabel, type Order } from "@/data/orders";
 
 const statusStyles: Record<Order["status"], string> = { confirmed: "bg-brand-soft text-brand", assigned: "bg-brand-soft text-brand", "on-the-way": "bg-amber-100 text-amber-800", "in-progress": "bg-amber-100 text-amber-800", completed: "bg-success/10 text-success", cancelled: "bg-red-50 text-red-700" };
 
-export function OrderDetail({ order }: { order: Order }) {
+export function OrderDetail({ order: initialOrder }: { order: Order }) {
+  const { orders, hydrated } = useOrders();
+  const order = hydrated ? orders.find((item) => item.id === initialOrder.id || item.bookingId === initialOrder.bookingId) ?? initialOrder : initialOrder;
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const cancelled = order.status === "cancelled";
