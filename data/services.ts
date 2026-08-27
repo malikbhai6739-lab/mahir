@@ -23,6 +23,7 @@ export type DirectoryService = {
   slug: string;
   name: string;
   category: ServiceCategorySlug;
+  image: string;
   description: string;
   startingPrice?: number;
   rating: number;
@@ -105,7 +106,7 @@ const inspectionCities = [
   "Faisalabad",
 ] as const satisfies readonly ServiceCity[];
 
-export const serviceCatalog: readonly DirectoryService[] = [
+const serviceDirectoryCatalog: readonly Omit<DirectoryService, "image">[] = [
   {
     slug: "ac-services",
     name: "AC Services",
@@ -549,6 +550,50 @@ export const serviceCatalog: readonly DirectoryService[] = [
     keywords: ["snagging", "handover", "new home", "defects", "finishing"],
   },
 ];
+
+const serviceImages: Record<string, string> = {
+  "ac-services": "/services/ac-services.jpg",
+  plumbing: "/services/plumbing.jpg",
+  electrical: "/services/electrical.jpg",
+  carpentry: "/services/carpentry.jpg",
+  painting: "/services/painting.jpg",
+  "minor-home-repairs": "/services/carpentry.jpg",
+  cleaning: "/services/cleaning.jpg",
+  "deep-home-cleaning": "/services/cleaning.jpg",
+  "sofa-carpet-cleaning": "/services/cleaning.jpg",
+  "kitchen-bathroom-cleaning": "/services/cleaning.jpg",
+  "water-tank-cleaning": "/services/plumbing.jpg",
+  "home-appliances-repair": "/services/appliance-repair.jpg",
+  "refrigerator-repair": "/services/appliance-repair.jpg",
+  "washing-machine-repair": "/services/appliance-repair.jpg",
+  "microwave-oven-repair": "/services/appliance-repair.jpg",
+  "geyser-repair": "/services/appliance-repair.jpg",
+  "salon-at-home": "/services/personal-care.jpg",
+  "mens-grooming-at-home": "/services/personal-care.jpg",
+  "makeup-styling": "/services/personal-care.jpg",
+  "hair-skincare": "/services/personal-care.jpg",
+  "pest-control": "/services/pest-control.jpg",
+  "termite-control": "/services/pest-control.jpg",
+  "cockroach-ant-treatment": "/services/pest-control.jpg",
+  "bed-bug-treatment": "/services/pest-control.jpg",
+  "rodent-control": "/services/pest-control.jpg",
+  "solar-panel-cleaning": "/services/solar.jpg",
+  "solar-system-inspection": "/services/solar.jpg",
+  "inverter-troubleshooting": "/services/solar.jpg",
+  "solar-preventive-maintenance": "/services/solar.jpg",
+  "home-inspection": "/services/inspection.jpg",
+  "move-in-home-inspection": "/services/inspection.jpg",
+  "electrical-safety-inspection": "/services/electrical.jpg",
+  "plumbing-moisture-inspection": "/services/plumbing.jpg",
+  "handover-snagging-inspection": "/services/inspection.jpg",
+};
+
+export const serviceCatalog: readonly DirectoryService[] = serviceDirectoryCatalog.map(
+  (service) => ({
+    ...service,
+    image: serviceImages[service.slug] ?? "/services/inspection.jpg",
+  } satisfies DirectoryService),
+);
 
 export const popularServiceSlugs = [
   "ac-services",

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { serviceToneStyles } from "@/components/services/service-tone-styles";
 import {
   serviceCategories,
@@ -26,13 +27,20 @@ export function ServiceCard({
     <article className="group flex min-w-0 flex-col overflow-hidden rounded-[1.35rem] border border-line bg-white transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-1 hover:border-brand/30 hover:shadow-card">
       <Link href={detailHref} className="block focus:outline-none focus-visible:rounded-t-[1.35rem]">
         <div
-          aria-hidden="true"
           className={`relative flex h-32 shrink-0 items-end justify-between overflow-hidden p-5 sm:h-36 ${serviceToneStyles[service.tone]}`}
         >
-          <span className="absolute -right-3 -top-8 text-[7.5rem] font-black leading-none tracking-[-0.06em] opacity-[0.08]">
+          <Image
+            src={service.image}
+            alt={service.name}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+            className="object-cover"
+          />
+          <span aria-hidden="true" className="absolute inset-0 bg-foreground/25" />
+          <span aria-hidden="true" className="absolute -right-3 -top-8 text-[7.5rem] font-black leading-none tracking-[-0.06em] opacity-[0.08]">
             {service.code}
           </span>
-          <span className="relative text-4xl font-black tracking-[-0.04em]">
+          <span aria-hidden="true" className="relative text-4xl font-black tracking-[-0.04em]">
             {service.code}
           </span>
           <span className="relative max-w-[70%] rounded-full border border-current/20 bg-white/70 px-2.5 py-1 text-right text-[0.65rem] font-semibold uppercase tracking-[0.12em]">
