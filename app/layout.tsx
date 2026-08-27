@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
+import { CartProvider } from "@/components/cart/cart-context";
 import "./globals.css";
 
 const geist = Geist({
@@ -33,7 +34,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geist.variable} antialiased`}
       data-scroll-behavior="smooth"
     >
-      <body>{children}</body>
+      <body>
+        <CartProvider>{children}</CartProvider>
+      </body>
     </html>
   );
 }

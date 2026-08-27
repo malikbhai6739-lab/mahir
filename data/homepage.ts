@@ -1,15 +1,21 @@
 export type NavigationItem = {
   label: string;
-  href: `#${string}`;
+  href: string;
 };
 
 export const navigationItems: NavigationItem[] = [
-  { label: "Services", href: "#services" },
-  { label: "Cities", href: "#city-search" },
-  { label: "Business", href: "#business" },
-  { label: "Become a Mahir", href: "#become-mahir" },
-  { label: "About Us", href: "#why-mahir" },
-  { label: "Help", href: "#faq" },
+  { label: "Services", href: "/services" },
+  { label: "How It Works", href: "/#how-it-works" },
+  { label: "Cities", href: "/#city-search" },
+  { label: "For Business", href: "/#business" },
+  { label: "Become a Mahir", href: "/#become-mahir" },
+  { label: "Help", href: "/#faq" },
+];
+
+export const mobileNavigationItems: NavigationItem[] = [
+  ...navigationItems,
+  { label: "Login", href: "/login" },
+  { label: "About Us", href: "/#why-mahir" },
 ];
 
 export const cities = [
@@ -19,7 +25,7 @@ export const cities = [
   "Karachi",
   "Faisalabad",
   "Multan",
-];
+] as const;
 
 export const trustIndicators = [
   "Verified Professionals",
@@ -246,29 +252,29 @@ export const footerGroups = [
   {
     title: "Services",
     links: [
-      { label: "AC Services", href: "#services" },
-      { label: "Plumbing", href: "#services" },
-      { label: "Electrical", href: "#services" },
-      { label: "Cleaning", href: "#services" },
-      { label: "All Services", href: "#services" },
+      { label: "AC Services", href: "/services?q=AC+Services#all-services" },
+      { label: "Plumbing", href: "/services?q=Plumbing#all-services" },
+      { label: "Electrical", href: "/services?q=Electrical#all-services" },
+      { label: "Cleaning", href: "/services?category=cleaning#all-services" },
+      { label: "All Services", href: "/services" },
     ],
   },
   {
     title: "Company",
     links: [
-      { label: "About Mahir", href: "#why-mahir" },
-      { label: "How It Works", href: "#how-it-works" },
-      { label: "Mahir for Business", href: "#business" },
-      { label: "Become a Mahir", href: "#become-mahir" },
-      { label: "Home Care Guides", href: "#guides" },
+      { label: "About Mahir", href: "/#why-mahir" },
+      { label: "How It Works", href: "/#how-it-works" },
+      { label: "Mahir for Business", href: "/#business" },
+      { label: "Become a Mahir", href: "/#become-mahir" },
+      { label: "Home Care Guides", href: "/#guides" },
     ],
   },
   {
     title: "Support",
     links: [
-      { label: "Help Centre", href: "#faq" },
-      { label: "Service Guarantee", href: "#why-mahir" },
-      { label: "Safety", href: "#why-mahir" },
+      { label: "Help Centre", href: "/#faq" },
+      { label: "Service Guarantee", href: "/#why-mahir" },
+      { label: "Safety", href: "/#why-mahir" },
       { label: "Contact Us", href: "#footer" },
     ],
   },
@@ -276,7 +282,7 @@ export const footerGroups = [
     title: "Cities",
     links: cities.slice(0, 5).map((city) => ({
       label: city,
-      href: "#city-search",
+      href: "/#city-search",
     })),
   },
 ] as const;

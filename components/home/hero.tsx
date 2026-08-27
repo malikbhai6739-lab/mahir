@@ -22,7 +22,7 @@ export function Hero() {
 
           <form
             id="city-search"
-            action="#services"
+            action="/services#all-services"
             className="mt-8 rounded-2xl border border-line bg-white p-3 shadow-card sm:p-4"
           >
             <div className="grid gap-3 sm:grid-cols-[0.8fr_1.3fr_auto] sm:items-end">
@@ -46,7 +46,7 @@ export function Hero() {
                 </span>
                 <input
                   type="search"
-                  name="service"
+                  name="q"
                   autoComplete="off"
                   placeholder="Try “AC repair” or “plumber”"
                   className="h-13 w-full rounded-xl border border-line bg-background px-4 text-base text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-brand"
@@ -87,6 +87,7 @@ export function Hero() {
               alt="A Mahir home-service professional ready for an appointment"
               fill
               preload
+              loading="eager"
               sizes="(max-width: 1023px) calc(100vw - 40px), 44vw"
               className="object-cover object-[62%_center]"
             />

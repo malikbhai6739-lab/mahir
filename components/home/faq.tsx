@@ -9,8 +9,8 @@ export function Faq() {
       aria-labelledby="faq-heading"
       className="bg-white py-20 sm:py-24 lg:py-28"
     >
-      <div className="site-container grid gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
-        <div>
+      <div className="site-container grid gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:items-start lg:gap-16">
+        <div className="min-w-0">
           <SectionHeading
             eyebrow="Frequently asked questions"
             title="Good to know before you book"
@@ -25,7 +25,9 @@ export function Faq() {
             </p>
           </div>
         </div>
-        <Accordion items={faqs} />
+        <div className="min-w-0">
+          <Accordion items={faqs} />
+        </div>
       </div>
     </section>
   );

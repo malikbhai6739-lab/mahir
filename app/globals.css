@@ -77,6 +77,37 @@ select {
   margin-inline: auto;
 }
 
+.affiliation-marquee {
+  overflow: hidden;
+  width: 100%;
+}
+
+.affiliation-track {
+  display: flex;
+  width: max-content;
+  animation: affiliations-scroll 55s linear infinite;
+}
+
+.affiliation-set {
+  display: flex;
+  flex-shrink: 0;
+  gap: 1rem;
+  padding-right: 1rem;
+}
+
+.affiliation-marquee:hover .affiliation-track {
+  animation-play-state: paused;
+}
+
+@keyframes affiliations-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 @media (min-width: 48rem) {
   .site-container {
     width: min(100% - 4rem, 78rem);

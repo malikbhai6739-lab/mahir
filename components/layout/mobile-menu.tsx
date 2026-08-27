@@ -35,7 +35,7 @@ export function MobileMenu({ items }: MobileMenuProps) {
   }, [isOpen]);
 
   return (
-    <div className="xl:hidden">
+    <div className="min-[1200px]:hidden">
       <button
         ref={triggerRef}
         type="button"
@@ -79,7 +79,10 @@ export function MobileMenu({ items }: MobileMenuProps) {
           >
             <ul className="space-y-1">
               {items.map((item, index) => (
-                <li key={item.label}>
+                <li
+                  key={item.label}
+                  className={index === 6 ? "mt-2 border-t border-line pt-2" : ""}
+                >
                   <Link
                     ref={index === 0 ? firstLinkRef : undefined}
                     href={item.href}
@@ -94,22 +97,6 @@ export function MobileMenu({ items }: MobileMenuProps) {
                 </li>
               ))}
             </ul>
-            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-line pt-3">
-              <Link
-                href="#booking"
-                onClick={() => setIsOpen(false)}
-                className="inline-flex min-h-12 items-center justify-center rounded-xl border border-line px-4 font-semibold text-foreground"
-              >
-                Login
-              </Link>
-              <Link
-                href="#booking"
-                onClick={() => setIsOpen(false)}
-                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-brand px-4 font-semibold text-white"
-              >
-                Book now
-              </Link>
-            </div>
           </nav>
         </>
       ) : null}

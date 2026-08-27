@@ -9,6 +9,7 @@ import { Maintenance } from "@/components/home/maintenance";
 import { PopularServices } from "@/components/home/popular-services";
 import { Testimonials } from "@/components/home/testimonials";
 import { WhyMahir } from "@/components/home/why-mahir";
+import { Affiliations } from "@/components/layout/affiliations";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 
@@ -29,6 +30,7 @@ export default function HomePage() {
         <Faq />
         <FinalCta />
       </main>
+      <Affiliations />
       <SiteFooter />
     </>
   );

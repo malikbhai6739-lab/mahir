@@ -10,8 +10,8 @@ export function WhyMahir() {
       className="bg-white py-20 sm:py-24 lg:py-28"
     >
       <div className="site-container">
-        <div className="grid gap-10 lg:grid-cols-[0.76fr_1.24fr] lg:items-start lg:gap-14">
-          <div>
+        <div className="grid gap-10 lg:grid-cols-[0.76fr_1.24fr] lg:items-stretch lg:gap-14">
+          <div className="min-w-0">
             <SectionHeading
               eyebrow="Why choose Mahir"
               title="A better standard for home services"
@@ -57,7 +57,7 @@ export function WhyMahir() {
             </div>
           </div>
 
-          <div className="grid gap-px overflow-hidden rounded-[1.75rem] border border-line bg-line sm:grid-cols-2">
+          <div className="grid min-w-0 gap-px overflow-hidden rounded-[1.75rem] border border-line bg-line sm:grid-cols-2 lg:h-full">
             {benefits.map((benefit) => (
               <article key={benefit.title} className="min-h-64 bg-white p-6 sm:p-8">
                 <div className="flex items-center justify-between">
