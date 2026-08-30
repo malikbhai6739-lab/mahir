@@ -1,46 +1,58 @@
 import { notFound } from "next/navigation";
+
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ServiceDetailPage } from "@/components/service-detail-page";
-import { serviceCatalog, serviceDetailCatalog } from "@/data/services";
 
-function buildFallbackServiceDetail(slug: string) {
-  const catalogEntry = serviceCatalog.find((item) => item.slug === slug);
+import {
+  serviceDetailCatalog,
+  type DirectoryService,
+  type ServiceDetail,
+} from "@/data/services";
 
-  if (!catalogEntry) {
-    return null;
-  }
+import { getWordPressServices } from "@/lib/mahir-api";
 
+function buildFallbackServiceDetail(
+  service: DirectoryService,
+): ServiceDetail {
   return {
-    slug: catalogEntry.slug,
-    title: catalogEntry.name,
-    category: catalogEntry.category,
-    image: "/images/mahir-technician.png",
-    description: catalogEntry.description,
-    rating: catalogEntry.rating,
-    reviewCount: catalogEntry.reviewCount,
-    completedOrders: 1200,
-    currentPrice: catalogEntry.startingPrice ?? 0,
-    originalPrice: catalogEntry.startingPrice ? catalogEntry.startingPrice + 500 : undefined,
+    slug: service.slug,
+    title: service.name,
+    category: service.category,
+    image: service.image,
+    description: service.description,
+
+    rating: service.rating,
+    reviewCount: service.reviewCount,
+    completedOrders: 0,
+
+    currentPrice: service.startingPrice ?? 0,
+    originalPrice: undefined,
+
     duration: "Approx. 60-90 minutes",
-    availability: "Available across major Mahir service areas.",
+    availability:
+      "Available across major Mahir service areas.",
+
     includedItems: [
       "Professional inspection",
       "Service-specific check",
       "Safety review",
       "Basic performance assessment",
     ],
+
     excludedItems: [
       "Replacement parts",
       "Gas refill unless selected separately",
       "Major repair work",
       "Electrical or structural modification",
     ],
+
     notes: [
       "Approximate duration may vary depending on the work scope.",
       "Standard tools and inspection steps are included in the service visit.",
       "Additional parts or work require approval before proceeding.",
     ],
+
     faqs: [
       {
         question: "What does this service include?",
@@ -58,38 +70,62 @@ function buildFallbackServiceDetail(slug: string) {
           "Standard service work is included, but parts, gas, or additional materials are quoted separately when required.",
       },
     ],
-    reviews: [
-      {
-        name: "Verified customer",
-        city: "Lahore",
-        rating: 5,
-        date: "Recent",
-        text: "The process was clear, the technician was professional, and the job was completed as expected.",
-      },
-      {
-        name: "Customer review",
-        city: "Islamabad",
-        rating: 4,
-        date: "Recent",
-        text: "Pricing was transparent and the technician explained the work clearly before starting.",
-      },
-    ],
+
+    reviews: [],
+  };
+}
+
+function mergeWordPressService(
+  liveService: DirectoryService,
+): ServiceDetail {
+  const existingDetail = serviceDetailCatalog.find(
+    (item) => item.slug === liveService.slug,
+  );
+
+  if (!existingDetail) {
+    return buildFallbackServiceDetail(liveService);
+  }
+
+  return {
+    ...existingDetail,
+
+    // WordPress is the source of truth
+    title: liveService.name,
+    category: liveService.category,
+    image: liveService.image,
+    description: liveService.description,
+    currentPrice:
+      liveService.startingPrice ??
+      existingDetail.currentPrice,
+
+    // Until original price is managed from WordPress,
+    // do not show the old hardcoded discount price.
+    originalPrice: undefined,
   };
 }
 
 type ServiceDetailPageProps = {
-  params: Promise<{ slug: string }>;
+  params: Promise<{
+    slug: string;
+  }>;
 };
 
-export default async function ServiceDetailRoutePage({ params }: ServiceDetailPageProps) {
+export default async function ServiceDetailRoutePage({
+  params,
+}: ServiceDetailPageProps) {
   const { slug } = await params;
-  const service =
-    serviceDetailCatalog.find((item) => item.slug === slug) ??
-    buildFallbackServiceDetail(slug);
 
-  if (!service) {
+  const liveServices = await getWordPressServices();
+
+  const liveService = liveServices.find(
+    (item) => item.slug === slug,
+  );
+
+  if (!liveService) {
     notFound();
   }
+
+  const service = mergeWordPressService(liveService);
 
   return (
     <>

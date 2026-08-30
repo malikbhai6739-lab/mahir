@@ -1,18 +1,72 @@
 import Link from "next/link";
+
 import { ServiceCard } from "@/components/services/service-card";
 import { SectionHeading } from "@/components/ui/section-heading";
 import {
-  filterServices,
   serviceCategories,
+  type DirectoryService,
   type ServiceFilters,
 } from "@/data/services";
+import { getWordPressServices } from "@/lib/mahir-api";
 
 type ServiceDirectoryProps = {
   filters: ServiceFilters;
 };
 
-export function ServiceDirectory({ filters }: ServiceDirectoryProps) {
-  const filteredServices = filterServices(filters);
+function filterLiveServices(
+  services: DirectoryService[],
+  filters: ServiceFilters,
+) {
+  const normalizedQuery = filters.query
+    .trim()
+    .toLocaleLowerCase("en");
+
+  return services.filter((service) => {
+    if (
+      filters.category &&
+      service.category !== filters.category
+    ) {
+      return false;
+    }
+
+    if (
+      filters.city &&
+      !service.availableCities.includes(filters.city)
+    ) {
+      return false;
+    }
+
+    if (!normalizedQuery) {
+      return true;
+    }
+
+    const categoryName = serviceCategories.find(
+      (category) => category.slug === service.category,
+    )?.name;
+
+    const searchText = [
+      service.name,
+      service.description,
+      categoryName,
+      ...service.keywords,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLocaleLowerCase("en");
+
+    return searchText.includes(normalizedQuery);
+  });
+}
+
+export async function ServiceDirectory({
+  filters,
+}: ServiceDirectoryProps) {
+  const services = await getWordPressServices();
+
+  const filteredServices = filterLiveServices(
+    services,
+    filters,
+  );
 
   return (
     <section
@@ -28,8 +82,16 @@ export function ServiceDirectory({ filters }: ServiceDirectoryProps) {
             description="Browse the current service catalog by category."
             id="all-services-heading"
           />
-          <p role="status" className="shrink-0 text-sm font-semibold text-muted">
-            {filteredServices.length} {filteredServices.length === 1 ? "service" : "services"} found
+
+          <p
+            role="status"
+            className="shrink-0 text-sm font-semibold text-muted"
+          >
+            {filteredServices.length}{" "}
+            {filteredServices.length === 1
+              ? "service"
+              : "services"}{" "}
+            found
             {filters.city ? ` in ${filters.city}` : ""}
           </p>
         </div>
@@ -37,11 +99,15 @@ export function ServiceDirectory({ filters }: ServiceDirectoryProps) {
         {filteredServices.length ? (
           <div className="mt-14 space-y-16">
             {serviceCategories.map((category) => {
-              const categoryServices = filteredServices.filter(
-                (service) => service.category === category.slug,
-              );
+              const categoryServices =
+                filteredServices.filter(
+                  (service) =>
+                    service.category === category.slug,
+                );
 
-              if (!categoryServices.length) return null;
+              if (!categoryServices.length) {
+                return null;
+              }
 
               return (
                 <section
@@ -56,13 +122,17 @@ export function ServiceDirectory({ filters }: ServiceDirectoryProps) {
                       >
                         {category.name}
                       </h3>
+
                       <p className="mt-2 max-w-2xl text-sm leading-6 text-muted sm:text-base sm:leading-7">
                         {category.description}
                       </p>
                     </div>
+
                     <span className="shrink-0 text-sm font-semibold text-muted">
                       {categoryServices.length}{" "}
-                      {categoryServices.length === 1 ? "service" : "services"}
+                      {categoryServices.length === 1
+                        ? "service"
+                        : "services"}
                     </span>
                   </div>
 
@@ -87,13 +157,16 @@ export function ServiceDirectory({ filters }: ServiceDirectoryProps) {
             >
               ?
             </span>
+
             <h3 className="mt-5 text-2xl font-bold leading-tight tracking-[-0.01em] text-foreground">
               No matching services yet
             </h3>
+
             <p className="mx-auto mt-3 max-w-xl leading-7 text-muted">
               Try another category, city, or search term to explore more of the
               Mahir catalog.
             </p>
+
             <Link
               href="/services#all-services"
               className="mt-6 inline-flex min-h-12 items-center justify-center rounded-xl bg-brand px-5 font-semibold text-white transition-colors hover:bg-brand-dark"
@@ -102,11 +175,6 @@ export function ServiceDirectory({ filters }: ServiceDirectoryProps) {
             </Link>
           </div>
         )}
-
-        <p className="mt-10 text-center text-xs leading-5 text-muted">
-          Starting prices and ratings are illustrative for this frontend phase.
-          Final pricing may vary by job scope, property, and city.
-        </p>
       </div>
     </section>
   );
