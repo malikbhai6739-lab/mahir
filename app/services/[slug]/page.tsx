@@ -24,15 +24,17 @@ function buildFallbackServiceDetail(
     category: service.category,
     image: service.image,
     description: service.description,
-
     rating: service.rating,
     reviewCount: service.reviewCount,
     completedOrders: 0,
-
     currentPrice: service.startingPrice ?? 0,
+
     originalPrice: undefined,
 
-    duration: "Approx. 60-90 minutes",
+    duration:
+      service.duration ??
+      "Approx. 60-90 minutes",
+
     availability:
       "Available across major Mahir service areas.",
 
@@ -65,7 +67,9 @@ function buildFallbackServiceDetail(
       {
         question: "How long does it take?",
         answer:
-          "Most visits take about 60 to 90 minutes depending on the service and property conditions.",
+          service.duration
+            ? `Estimated service duration is ${service.duration}.`
+            : "Most visits take about 60 to 90 minutes depending on the service and property conditions.",
       },
       {
         question: "Are extra materials included?",
@@ -86,23 +90,32 @@ function mergeWordPressService(
   );
 
   if (!existingDetail) {
-    return buildFallbackServiceDetail(liveService);
+    return buildFallbackServiceDetail(
+      liveService,
+    );
   }
 
   return {
     ...existingDetail,
 
-    // WordPress is the source of truth
+    // WordPress is source of truth
     title: liveService.name,
+
     category: liveService.category,
+
     image: liveService.image,
+
     description: liveService.description,
+
     currentPrice:
       liveService.startingPrice ??
       existingDetail.currentPrice,
 
-    // Until original price is managed from WordPress,
-    // do not show the old hardcoded discount price.
+    duration:
+      liveService.duration ??
+      existingDetail.duration,
+
+    // Old hardcoded discount price disabled
     originalPrice: undefined,
   };
 }
@@ -118,7 +131,8 @@ export default async function ServiceDetailRoutePage({
 }: ServiceDetailPageProps) {
   const { slug } = await params;
 
-  const liveServices = await getWordPressServices();
+  const liveServices =
+    await getWordPressServices();
 
   const liveService = liveServices.find(
     (item) => item.slug === slug,
@@ -128,12 +142,17 @@ export default async function ServiceDetailRoutePage({
     notFound();
   }
 
-  const service = mergeWordPressService(liveService);
+  const service =
+    mergeWordPressService(liveService);
 
   return (
     <>
       <SiteHeader />
-      <ServiceDetailPage service={service} />
+
+      <ServiceDetailPage
+        service={service}
+      />
+
       <SiteFooter />
     </>
   );
