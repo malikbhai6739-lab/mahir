@@ -89,7 +89,9 @@ function mapWordPressService(
 
   return {
     slug: service.slug,
+
     name: service.name,
+
     category:
       existingService?.category ??
       mapWordPressCategory(service.category?.slug),
@@ -109,14 +111,18 @@ function mapWordPressService(
       service.starting_price ??
       existingService?.startingPrice,
 
-    rating: existingService?.rating ?? 0,
-    reviewCount: existingService?.reviewCount ?? 0,
+    rating:
+      existingService?.rating ?? 0,
+
+    reviewCount:
+      existingService?.reviewCount ?? 0,
 
     code:
       existingService?.code ??
       getServiceCode(service.name),
 
-    tone: existingService?.tone ?? "blue",
+    tone:
+      existingService?.tone ?? "blue",
 
     availableCities:
       existingService?.availableCities ?? cities,
@@ -134,10 +140,17 @@ export async function getWordPressServices(): Promise<
   DirectoryService[]
 > {
   try {
+    const cacheBuster = Date.now();
+
     const response = await fetch(
-      `${MAHIR_API_URL}/services`,
+      `${MAHIR_API_URL}/services?_=${cacheBuster}`,
       {
         cache: "no-store",
+        headers: {
+          "Cache-Control":
+            "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+        },
       },
     );
 
@@ -150,11 +163,18 @@ export async function getWordPressServices(): Promise<
     const result =
       (await response.json()) as ServicesApiResponse;
 
-    if (!result.success || !Array.isArray(result.data)) {
-      throw new Error("Invalid Mahir API response");
+    if (
+      !result.success ||
+      !Array.isArray(result.data)
+    ) {
+      throw new Error(
+        "Invalid Mahir API response",
+      );
     }
 
-    return result.data.map(mapWordPressService);
+    return result.data.map(
+      mapWordPressService,
+    );
   } catch (error) {
     console.error(
       "Unable to load WordPress services:",
