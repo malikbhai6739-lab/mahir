@@ -25,9 +25,23 @@ type WordPressService = {
   } | null;
 };
 
+export type WordPressCategory = {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  count: number;
+  parent: number;
+};
+
 type ServicesApiResponse = {
   success: boolean;
   data: WordPressService[];
+};
+
+type CategoriesApiResponse = {
+  success: boolean;
+  data: WordPressCategory[];
 };
 
 function mapWordPressCategory(
@@ -156,7 +170,7 @@ export async function getWordPressServices(): Promise<
 
     if (!response.ok) {
       throw new Error(
-        `Mahir API returned ${response.status}`,
+        `Mahir services API returned ${response.status}`,
       );
     }
 
@@ -168,7 +182,7 @@ export async function getWordPressServices(): Promise<
       !Array.isArray(result.data)
     ) {
       throw new Error(
-        "Invalid Mahir API response",
+        "Invalid Mahir services API response",
       );
     }
 
@@ -182,5 +196,52 @@ export async function getWordPressServices(): Promise<
     );
 
     return [...serviceCatalog];
+  }
+}
+
+export async function getWordPressCategories(): Promise<
+  WordPressCategory[]
+> {
+  try {
+    const cacheBuster = Date.now();
+
+    const response = await fetch(
+      `${MAHIR_API_URL}/categories?_=${cacheBuster}`,
+      {
+        cache: "no-store",
+        headers: {
+          "Cache-Control":
+            "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Mahir categories API returned ${response.status}`,
+      );
+    }
+
+    const result =
+      (await response.json()) as CategoriesApiResponse;
+
+    if (
+      !result.success ||
+      !Array.isArray(result.data)
+    ) {
+      throw new Error(
+        "Invalid Mahir categories API response",
+      );
+    }
+
+    return result.data;
+  } catch (error) {
+    console.error(
+      "Unable to load WordPress categories:",
+      error,
+    );
+
+    return [];
   }
 }
