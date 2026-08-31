@@ -8,7 +8,6 @@ import { ServicesFinalCta } from "@/components/services/services-final-cta";
 import { ServicesHero } from "@/components/services/services-hero";
 import { TrustSection } from "@/components/services/trust-section";
 import {
-  isServiceCategorySlug,
   isServiceCity,
   type ServiceFilters,
 } from "@/data/services";
@@ -34,13 +33,14 @@ export default async function ServicesPage({
   searchParams,
 }: ServicesPageProps) {
   const params = await searchParams;
+
   const query = readSearchParam(params.q).slice(0, 100);
   const categoryParam = readSearchParam(params.category);
   const cityParam = readSearchParam(params.city);
 
   const filters: ServiceFilters = {
     query,
-    category: isServiceCategorySlug(categoryParam) ? categoryParam : "",
+    category: categoryParam,
     city: isServiceCity(cityParam) ? cityParam : "",
   };
 

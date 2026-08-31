@@ -2,7 +2,6 @@ import { cities } from "@/data/homepage";
 import {
   serviceCatalog,
   type DirectoryService,
-  type ServiceCategorySlug,
 } from "@/data/services";
 
 const MAHIR_API_URL =
@@ -44,39 +43,6 @@ type CategoriesApiResponse = {
   data: WordPressCategory[];
 };
 
-function mapWordPressCategory(
-  categorySlug?: string,
-): ServiceCategorySlug {
-  switch (categorySlug) {
-    case "cleaning":
-      return "cleaning";
-
-    case "appliance-repair":
-      return "appliance-repair";
-
-    case "personal-care":
-      return "personal-care";
-
-    case "pest-control":
-      return "pest-control";
-
-    case "solar-services":
-      return "solar-services";
-
-    case "home-inspection":
-      return "home-inspection";
-
-    case "ac-services":
-    case "plumbing":
-    case "electrical":
-    case "carpentry":
-    case "painting":
-    case "home-maintenance":
-    default:
-      return "home-maintenance";
-  }
-}
-
 function getServiceCode(name: string) {
   const words = name
     .trim()
@@ -107,8 +73,9 @@ function mapWordPressService(
     name: service.name,
 
     category:
+      service.category?.slug ??
       existingService?.category ??
-      mapWordPressCategory(service.category?.slug),
+      "uncategorized",
 
     image:
       service.image ??

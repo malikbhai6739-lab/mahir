@@ -22,7 +22,7 @@ export type ServiceCategory = {
 export type DirectoryService = {
   slug: string;
   name: string;
-  category: ServiceCategorySlug;
+  category: string;
   image: string;
   description: string;
   startingPrice?: number;
@@ -36,7 +36,7 @@ export type DirectoryService = {
 
 export type ServiceFilters = {
   query: string;
-  category: ServiceCategorySlug | "";
+  category: string;
   city: ServiceCity | "";
 };
 
@@ -627,7 +627,7 @@ export type ServiceFaq = {
 export type ServiceDetail = {
   slug: string;
   title: string;
-  category: ServiceCategorySlug;
+  category: string;
   image: string;
   description: string;
   rating: number;
