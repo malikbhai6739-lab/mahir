@@ -2,11 +2,11 @@ import Link from "next/link";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { serviceToneStyles } from "@/components/services/service-tone-styles";
 import {
-  serviceCatalog,
   serviceCategories,
   type ServiceCategorySlug,
   type ServiceFilters,
 } from "@/data/services";
+import { getWordPressServices } from "@/lib/mahir-api";
 
 type ServiceCategoriesProps = {
   filters: ServiceFilters;
@@ -25,7 +25,11 @@ function buildCategoryHref(
   return `/services?${params.toString()}#all-services`;
 }
 
-export function ServiceCategories({ filters }: ServiceCategoriesProps) {
+export async function ServiceCategories({
+  filters,
+}: ServiceCategoriesProps) {
+  const services = await getWordPressServices();
+
   return (
     <section
       aria-labelledby="service-categories-heading"
@@ -43,7 +47,8 @@ export function ServiceCategories({ filters }: ServiceCategoriesProps) {
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {serviceCategories.map((category) => {
               const isActive = filters.category === category.slug;
-              const serviceCount = serviceCatalog.filter(
+
+              const serviceCount = services.filter(
                 (service) => service.category === category.slug,
               ).length;
 
@@ -64,14 +69,19 @@ export function ServiceCategories({ filters }: ServiceCategoriesProps) {
                     >
                       {category.code}
                     </span>
+
                     <h3 className="mt-5 text-lg font-semibold leading-6 tracking-[-0.01em] text-foreground">
                       {category.name}
                     </h3>
+
                     <p className="mt-2 flex-1 text-sm leading-6 text-muted">
                       {category.description}
                     </p>
+
                     <span className="mt-4 flex items-center justify-between border-t border-line pt-3 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-                      {serviceCount} services
+                      {serviceCount}{" "}
+                      {serviceCount === 1 ? "service" : "services"}
+
                       <span
                         aria-hidden="true"
                         className="text-base text-brand transition-transform group-hover:translate-x-1"
