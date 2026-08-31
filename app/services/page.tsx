@@ -13,6 +13,9 @@ import {
   type ServiceFilters,
 } from "@/data/services";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: "All Services | Mahir Company",
   description:
@@ -34,6 +37,7 @@ export default async function ServicesPage({
   const query = readSearchParam(params.q).slice(0, 100);
   const categoryParam = readSearchParam(params.category);
   const cityParam = readSearchParam(params.city);
+
   const filters: ServiceFilters = {
     query,
     category: isServiceCategorySlug(categoryParam) ? categoryParam : "",
@@ -43,18 +47,25 @@ export default async function ServicesPage({
   return (
     <>
       <SiteHeader />
+
       <main>
         <ServicesHero
           initialCategory={filters.category}
           initialCity={filters.city}
           initialQuery={filters.query}
         />
+
         <ServiceCategories filters={filters} />
+
         <PopularServices />
+
         <ServiceDirectory filters={filters} />
+
         <TrustSection />
+
         <ServicesFinalCta />
       </main>
+
       <SiteFooter />
     </>
   );

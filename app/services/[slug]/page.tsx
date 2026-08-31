@@ -12,6 +12,9 @@ import {
 
 import { getWordPressServices } from "@/lib/mahir-api";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 function buildFallbackServiceDetail(
   service: DirectoryService,
 ): ServiceDetail {
