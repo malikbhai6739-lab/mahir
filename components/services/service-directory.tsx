@@ -2,12 +2,15 @@ import Link from "next/link";
 
 import { ServiceCard } from "@/components/services/service-card";
 import { SectionHeading } from "@/components/ui/section-heading";
-import {
-  serviceCategories,
-  type DirectoryService,
-  type ServiceFilters,
+import type {
+  DirectoryService,
+  ServiceFilters,
 } from "@/data/services";
-import { getWordPressServices } from "@/lib/mahir-api";
+import {
+  getWordPressCategories,
+  getWordPressServices,
+  type WordPressCategory,
+} from "@/lib/mahir-api";
 
 type ServiceDirectoryProps = {
   filters: ServiceFilters;
@@ -15,6 +18,7 @@ type ServiceDirectoryProps = {
 
 function filterLiveServices(
   services: DirectoryService[],
+  categories: WordPressCategory[],
   filters: ServiceFilters,
 ) {
   const normalizedQuery = filters.query
@@ -40,7 +44,7 @@ function filterLiveServices(
       return true;
     }
 
-    const categoryName = serviceCategories.find(
+    const categoryName = categories.find(
       (category) => category.slug === service.category,
     )?.name;
 
@@ -61,10 +65,14 @@ function filterLiveServices(
 export async function ServiceDirectory({
   filters,
 }: ServiceDirectoryProps) {
-  const services = await getWordPressServices();
+  const [services, categories] = await Promise.all([
+    getWordPressServices(),
+    getWordPressCategories(),
+  ]);
 
   const filteredServices = filterLiveServices(
     services,
+    categories,
     filters,
   );
 
@@ -98,7 +106,7 @@ export async function ServiceDirectory({
 
         {filteredServices.length ? (
           <div className="mt-14 space-y-16">
-            {serviceCategories.map((category) => {
+            {categories.map((category) => {
               const categoryServices =
                 filteredServices.filter(
                   (service) =>
@@ -111,7 +119,7 @@ export async function ServiceDirectory({
 
               return (
                 <section
-                  key={category.slug}
+                  key={category.id}
                   aria-labelledby={`${category.slug}-services-heading`}
                 >
                   <div className="flex flex-col gap-3 border-b border-line pb-5 sm:flex-row sm:items-end sm:justify-between">
@@ -124,7 +132,8 @@ export async function ServiceDirectory({
                       </h3>
 
                       <p className="mt-2 max-w-2xl text-sm leading-6 text-muted sm:text-base sm:leading-7">
-                        {category.description}
+                        {category.description ||
+                          "Professional Mahir home services."}
                       </p>
                     </div>
 
