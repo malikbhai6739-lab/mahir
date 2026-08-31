@@ -1,9 +1,19 @@
 import Link from "next/link";
 import { ServiceCard } from "@/components/services/service-card";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { popularServices } from "@/data/services";
+import { getWordPressServices } from "@/lib/mahir-api";
 
-export function PopularServices() {
+export async function PopularServices() {
+  const services = await getWordPressServices();
+
+  // Filhaal WordPress ki pehli 4 published services
+  // Popular Services section mein show hongi.
+  const popularServices = services.slice(0, 4);
+
+  if (popularServices.length === 0) {
+    return null;
+  }
+
   return (
     <section
       aria-labelledby="popular-services-page-heading"
@@ -27,7 +37,10 @@ export function PopularServices() {
 
         <div className="mt-10 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
           {popularServices.map((service) => (
-            <ServiceCard key={service.slug} service={service} />
+            <ServiceCard
+              key={service.slug}
+              service={service}
+            />
           ))}
         </div>
 
