@@ -27,7 +27,9 @@ function buildFallbackServiceDetail(
     rating: service.rating,
     reviewCount: service.reviewCount,
     completedOrders: 0,
-    currentPrice: service.startingPrice ?? 0,
+
+    currentPrice:
+      service.startingPrice ?? 0,
 
     originalPrice: undefined,
 
@@ -36,6 +38,7 @@ function buildFallbackServiceDetail(
       "Approx. 60-90 minutes",
 
     availability:
+      service.availability ??
       "Available across major Mahir service areas.",
 
     includedItems: [
@@ -85,9 +88,11 @@ function buildFallbackServiceDetail(
 function mergeWordPressService(
   liveService: DirectoryService,
 ): ServiceDetail {
-  const existingDetail = serviceDetailCatalog.find(
-    (item) => item.slug === liveService.slug,
-  );
+  const existingDetail =
+    serviceDetailCatalog.find(
+      (item) =>
+        item.slug === liveService.slug,
+    );
 
   if (!existingDetail) {
     return buildFallbackServiceDetail(
@@ -98,7 +103,7 @@ function mergeWordPressService(
   return {
     ...existingDetail,
 
-    // WordPress is source of truth
+    // WordPress is source of truth.
     title: liveService.name,
 
     category: liveService.category,
@@ -115,7 +120,11 @@ function mergeWordPressService(
       liveService.duration ??
       existingDetail.duration,
 
-    // Old hardcoded discount price disabled
+    availability:
+      liveService.availability ??
+      existingDetail.availability,
+
+    // Old hardcoded discount price disabled.
     originalPrice: undefined,
   };
 }
@@ -134,16 +143,20 @@ export default async function ServiceDetailRoutePage({
   const liveServices =
     await getWordPressServices();
 
-  const liveService = liveServices.find(
-    (item) => item.slug === slug,
-  );
+  const liveService =
+    liveServices.find(
+      (item) =>
+        item.slug === slug,
+    );
 
   if (!liveService) {
     notFound();
   }
 
   const service =
-    mergeWordPressService(liveService);
+    mergeWordPressService(
+      liveService,
+    );
 
   return (
     <>
