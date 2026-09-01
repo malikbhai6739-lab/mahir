@@ -8,9 +8,9 @@ import { ServicesFinalCta } from "@/components/services/services-final-cta";
 import { ServicesHero } from "@/components/services/services-hero";
 import { TrustSection } from "@/components/services/trust-section";
 import {
-  isServiceCity,
   type ServiceFilters,
 } from "@/data/services";
+import { getWordPressCities } from "@/lib/mahir-api";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -38,10 +38,12 @@ export default async function ServicesPage({
   const categoryParam = readSearchParam(params.category);
   const cityParam = readSearchParam(params.city);
 
+  const cities = await getWordPressCities();
+
   const filters: ServiceFilters = {
     query,
     category: categoryParam,
-    city: isServiceCity(cityParam) ? cityParam : "",
+    city: cityParam,
   };
 
   return (
@@ -50,6 +52,7 @@ export default async function ServicesPage({
 
       <main>
         <ServicesHero
+          cities={cities}
           initialCategory={filters.category}
           initialCity={filters.city}
           initialQuery={filters.query}

@@ -35,7 +35,9 @@ function filterLiveServices(
 
     if (
       filters.city &&
-      !service.availableCities.includes(filters.city)
+      !service.availableCities.some(
+        (city) => city.slug === filters.city,
+      )
     ) {
       return false;
     }

@@ -1,13 +1,17 @@
-import { cities } from "@/data/homepage";
-import { getWordPressCategories } from "@/lib/mahir-api";
+import {
+  getWordPressCategories,
+  type WordPressCity,
+} from "@/lib/mahir-api";
 
 type ServicesHeroProps = {
+  cities: WordPressCity[];
   initialCity?: string;
   initialQuery?: string;
   initialCategory?: string;
 };
 
 export async function ServicesHero({
+  cities: serviceCities,
   initialCity = "",
   initialQuery = "",
   initialCategory = "",
@@ -54,9 +58,9 @@ export async function ServicesHero({
               >
                 <option value="">All cities</option>
 
-                {cities.map((city) => (
-                  <option key={city} value={city}>
-                    {city}
+                {serviceCities.map((city) => (
+                  <option key={city.id} value={city.slug}>
+                    {city.name}
                   </option>
                 ))}
               </select>

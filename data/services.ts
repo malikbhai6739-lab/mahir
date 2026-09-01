@@ -1,6 +1,17 @@
 import { cities, type ServiceTone } from "@/data/homepage";
 
-export type ServiceCity = (typeof cities)[number];
+export type ServiceCity = {
+  slug: string;
+  name: string;
+};
+
+const toServiceCities = (
+  cityNames: readonly string[],
+): readonly ServiceCity[] =>
+  cityNames.map((name) => ({
+    slug: name.toLocaleLowerCase("en").replace(/\s+/g, "-"),
+    name,
+  }));
 
 export type ServiceCategorySlug =
   | "home-maintenance"
@@ -32,6 +43,7 @@ export type DirectoryService = {
   excludedItems?: readonly string[];
   notes?: readonly string[];
   faqs?: readonly ServiceFaq[];
+  hasStructuredCities?: boolean;
   rating: number;
   reviewCount: number;
   code: string;
@@ -43,7 +55,7 @@ export type DirectoryService = {
 export type ServiceFilters = {
   query: string;
   category: string;
-  city: ServiceCity | "";
+  city: string;
 };
 
 export const serviceCategories: readonly ServiceCategory[] = [
@@ -98,19 +110,23 @@ export const serviceCategories: readonly ServiceCategory[] = [
   },
 ];
 
-const allCities = cities;
+const allCities = toServiceCities(cities);
 
-const majorCities = [
+const majorCityNames = [
   "Lahore",
   "Islamabad",
   "Rawalpindi",
   "Karachi",
-] as const satisfies readonly ServiceCity[];
+] as const satisfies readonly string[];
 
-const inspectionCities = [
-  ...majorCities,
+const inspectionCityNames = [
+  ...majorCityNames,
   "Faisalabad",
-] as const satisfies readonly ServiceCity[];
+] as const satisfies readonly string[];
+
+const majorCities = toServiceCities(majorCityNames);
+
+const inspectionCities = toServiceCities(inspectionCityNames);
 
 const serviceDirectoryCatalog: readonly Omit<DirectoryService, "image">[] = [
   {
@@ -976,8 +992,8 @@ export function isServiceCategorySlug(
   return serviceCategories.some((category) => category.slug === value);
 }
 
-export function isServiceCity(value: string): value is ServiceCity {
-  return cities.some((city) => city === value);
+export function isServiceCity(value: string): value is string {
+  return value.trim() !== "";
 }
 
 export function filterServices({
@@ -989,7 +1005,14 @@ export function filterServices({
 
   return serviceCatalog.filter((service) => {
     if (category && service.category !== category) return false;
-    if (city && !service.availableCities.includes(city)) return false;
+    if (
+      city &&
+      !service.availableCities.some(
+        (serviceCity) => serviceCity.slug === city,
+      )
+    ) {
+      return false;
+    }
     if (!normalizedQuery) return true;
 
     const categoryName = serviceCategories.find(

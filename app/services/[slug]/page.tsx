@@ -15,6 +15,21 @@ import { getWordPressServices } from "@/lib/mahir-api";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+function getStructuredAvailability(
+  service: DirectoryService,
+) {
+  if (
+    !service.hasStructuredCities ||
+    !service.availableCities.length
+  ) {
+    return undefined;
+  }
+
+  return `Available in ${service.availableCities
+    .map((city) => city.name)
+    .join(", ")}`;
+}
+
 function buildFallbackServiceDetail(
   service: DirectoryService,
 ): ServiceDetail {
@@ -38,6 +53,7 @@ function buildFallbackServiceDetail(
       "Approx. 60-90 minutes",
 
     availability:
+      getStructuredAvailability(service) ??
       service.availability ??
       "Available across major Mahir service areas.",
 
@@ -133,6 +149,7 @@ function mergeWordPressService(
       existingDetail.duration,
 
     availability:
+      getStructuredAvailability(liveService) ??
       liveService.availability ??
       existingDetail.availability,
 

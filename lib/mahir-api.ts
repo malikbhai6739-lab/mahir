@@ -25,6 +25,11 @@ type WordPressService = {
     question: string;
     answer: string;
   }>;
+  cities: Array<{
+    id: number;
+    name: string;
+    slug: string;
+  }>;
   currency: string;
   category: {
     id: number;
@@ -51,6 +56,29 @@ type CategoriesApiResponse = {
   success: boolean;
   data: WordPressCategory[];
 };
+
+export type WordPressCity = {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  count: number;
+};
+
+type CitiesApiResponse = {
+  success: boolean;
+  data: WordPressCity[];
+};
+
+const staticCities: WordPressCity[] = cities.map(
+  (name, index) => ({
+    id: index + 1,
+    name,
+    slug: name.toLocaleLowerCase("en").replace(/\s+/g, "-"),
+    description: "",
+    count: 0,
+  }),
+);
 
 function getServiceCode(name: string) {
   const words = name
@@ -85,6 +113,17 @@ function mapWordPressService(
     .map((faq) => ({
       question: faq.question.trim(),
       answer: faq.answer.trim(),
+    }));
+
+  const mappedCities = service.cities
+    ?.filter(
+      (city) =>
+        city.name.trim() !== "" &&
+        city.slug.trim() !== "",
+    )
+    .map((city) => ({
+      slug: city.slug.trim(),
+      name: city.name.trim(),
     }));
 
   return {
@@ -140,6 +179,8 @@ function mapWordPressService(
         ? validFaqs
         : existingService?.faqs,
 
+    hasStructuredCities: Boolean(mappedCities?.length),
+
     rating:
       existingService?.rating ?? 0,
 
@@ -154,7 +195,13 @@ function mapWordPressService(
       existingService?.tone ?? "blue",
 
     availableCities:
-      existingService?.availableCities ?? cities,
+      mappedCities?.length
+        ? mappedCities
+        : existingService?.availableCities ??
+          staticCities.map(({ slug, name }) => ({
+            slug,
+            name,
+          })),
 
     keywords:
       existingService?.keywords ?? [
@@ -211,6 +258,55 @@ export async function getWordPressServices(): Promise<
     );
 
     return [...serviceCatalog];
+  }
+}
+
+export async function getWordPressCities(): Promise<
+  WordPressCity[]
+> {
+  try {
+    const cacheBuster = Date.now();
+
+    const response = await fetch(
+      `${MAHIR_API_URL}/cities?_=${cacheBuster}`,
+      {
+        cache: "no-store",
+        headers: {
+          "Cache-Control":
+            "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+        },
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Mahir cities API returned ${response.status}`,
+      );
+    }
+
+    const result =
+      (await response.json()) as CitiesApiResponse;
+
+    if (
+      !result.success ||
+      !Array.isArray(result.data)
+    ) {
+      throw new Error(
+        "Invalid Mahir cities API response",
+      );
+    }
+
+    return result.data.length
+      ? result.data
+      : staticCities;
+  } catch (error) {
+    console.error(
+      "Unable to load WordPress cities:",
+      error,
+    );
+
+    return staticCities;
   }
 }
 
