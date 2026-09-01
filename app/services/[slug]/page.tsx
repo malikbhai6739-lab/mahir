@@ -44,7 +44,11 @@ function buildFallbackServiceDetail(
     completedOrders: 0,
 
     currentPrice:
-      service.startingPrice ?? 0,
+      service.pricing?.startingPrice ??
+      service.startingPrice ??
+      0,
+
+    pricing: service.pricing,
 
     originalPrice: undefined,
 
@@ -141,8 +145,13 @@ function mergeWordPressService(
     description: liveService.description,
 
     currentPrice:
+      liveService.pricing?.startingPrice ??
       liveService.startingPrice ??
       existingDetail.currentPrice,
+
+    pricing:
+      liveService.pricing ??
+      existingDetail.pricing,
 
     duration:
       liveService.duration ??

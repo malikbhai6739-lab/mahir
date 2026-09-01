@@ -30,6 +30,15 @@ export type ServiceCategory = {
   tone: ServiceTone;
 };
 
+export type ServicePricing = {
+  type: "fixed" | "starting_from" | "inspection_required";
+  startingPrice: number | null;
+  minPrice: number | null;
+  maxPrice: number | null;
+  inspectionFee: number | null;
+  note: string;
+};
+
 export type DirectoryService = {
   slug: string;
   name: string;
@@ -44,6 +53,7 @@ export type DirectoryService = {
   notes?: readonly string[];
   faqs?: readonly ServiceFaq[];
   hasStructuredCities?: boolean;
+  pricing?: ServicePricing;
   rating: number;
   reviewCount: number;
   code: string;
@@ -657,6 +667,7 @@ export type ServiceDetail = {
   completedOrders: number;
   currentPrice: number;
   originalPrice?: number;
+  pricing?: ServicePricing;
   duration: string;
   availability: string;
   includedItems: readonly string[];

@@ -12,6 +12,57 @@ import type { ServiceDetail } from "@/data/services";
 
 const priceFormatter = new Intl.NumberFormat("en-PK");
 
+function getPriceDetails(service: ServiceDetail) {
+  const pricing = service.pricing;
+
+  if (!pricing) {
+    return {
+      primary: `PKR ${priceFormatter.format(service.currentPrice)}`,
+      secondary: undefined,
+      inspectionFee: undefined,
+      note: undefined,
+    };
+  }
+
+  if (pricing.type === "inspection_required") {
+    return {
+      primary: "Inspection required",
+      secondary: undefined,
+      inspectionFee:
+        pricing.inspectionFee && pricing.inspectionFee > 0
+          ? `Inspection fee: PKR ${priceFormatter.format(pricing.inspectionFee)}`
+          : undefined,
+      note: pricing.note || undefined,
+    };
+  }
+
+  const displayPrice =
+    pricing.type === "starting_from"
+      ? pricing.minPrice ??
+        pricing.startingPrice ??
+        service.currentPrice
+      : pricing.startingPrice ?? service.currentPrice;
+
+  return {
+    primary:
+      pricing.type === "starting_from"
+        ? `Starting from PKR ${priceFormatter.format(displayPrice)}`
+        : `PKR ${priceFormatter.format(displayPrice)}`,
+    secondary:
+      pricing.type === "starting_from" &&
+      pricing.minPrice !== null &&
+      pricing.maxPrice !== null &&
+      pricing.minPrice !== pricing.maxPrice
+        ? `Estimated range: PKR ${priceFormatter.format(pricing.minPrice)} \u2013 PKR ${priceFormatter.format(pricing.maxPrice)}`
+        : undefined,
+    inspectionFee:
+      pricing.inspectionFee && pricing.inspectionFee > 0
+        ? `Inspection fee: PKR ${priceFormatter.format(pricing.inspectionFee)}`
+        : undefined,
+    note: pricing.note || undefined,
+  };
+}
+
 function getDiscountPercent(currentPrice: number, originalPrice?: number) {
   if (!originalPrice || originalPrice <= currentPrice) return 0;
   return Math.round(((originalPrice - currentPrice) / originalPrice) * 100);
@@ -52,6 +103,7 @@ export function ServiceDetailPage({ service }: ServiceDetailPageProps) {
 
   const category = serviceCategories.find((item) => item.slug === service.category);
   const discountPercent = getDiscountPercent(service.currentPrice, service.originalPrice);
+  const priceDetails = getPriceDetails(service);
 
   return (
     <>
@@ -128,7 +180,7 @@ export function ServiceDetailPage({ service }: ServiceDetailPageProps) {
               <div className="mt-6 rounded-2xl border border-line bg-background p-4">
                 <div className="flex flex-wrap items-end gap-3">
                   <p className="text-3xl font-black tracking-[-0.03em] text-foreground">
-                    PKR {priceFormatter.format(service.currentPrice)}
+                    {priceDetails.primary}
                   </p>
                   {service.originalPrice ? (
                     <>
@@ -143,6 +195,24 @@ export function ServiceDetailPage({ service }: ServiceDetailPageProps) {
                     </>
                   ) : null}
                 </div>
+
+                {priceDetails.secondary ? (
+                  <p className="mt-2 text-sm text-muted">
+                    {priceDetails.secondary}
+                  </p>
+                ) : null}
+
+                {priceDetails.inspectionFee ? (
+                  <p className="mt-2 text-sm text-muted">
+                    {priceDetails.inspectionFee}
+                  </p>
+                ) : null}
+
+                {priceDetails.note ? (
+                  <p className="mt-2 text-sm leading-6 text-muted">
+                    {priceDetails.note}
+                  </p>
+                ) : null}
 
                 <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                   {cartItem ? (
@@ -340,10 +410,12 @@ export function ServiceDetailPage({ service }: ServiceDetailPageProps) {
           <div className="mx-auto flex max-w-md items-center justify-between gap-3">
             <div>
               <p className="text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-muted">
-                Starting at
+                {service.pricing?.type === "inspection_required"
+                  ? "Pricing"
+                  : "Starting at"}
               </p>
               <p className="text-xl font-black tracking-[-0.02em] text-foreground">
-                PKR {priceFormatter.format(service.currentPrice)}
+                {priceDetails.primary}
               </p>
             </div>
             {cartItem ? (

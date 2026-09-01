@@ -2,6 +2,7 @@ import { cities } from "@/data/homepage";
 import {
   serviceCatalog,
   type DirectoryService,
+  type ServicePricing,
 } from "@/data/services";
 
 const MAHIR_API_URL =
@@ -30,6 +31,14 @@ type WordPressService = {
     name: string;
     slug: string;
   }>;
+  pricing?: {
+    type: string;
+    starting_price: number | null;
+    min_price: number | null;
+    max_price: number | null;
+    inspection_fee: number | null;
+    note: string;
+  };
   currency: string;
   category: {
     id: number;
@@ -97,6 +106,50 @@ function getServiceCode(name: string) {
   return `${words[0][0]}${words[1][0]}`.toUpperCase();
 }
 
+function normalizePrice(value: unknown) {
+  if (
+    typeof value !== "number" ||
+    !Number.isFinite(value) ||
+    value < 0
+  ) {
+    return null;
+  }
+
+  return value;
+}
+
+function mapServicePricing(
+  pricing: WordPressService["pricing"],
+): ServicePricing | undefined {
+  if (!pricing) {
+    return undefined;
+  }
+
+  if (
+    ![
+      "fixed",
+      "starting_from",
+      "inspection_required",
+    ].includes(pricing.type)
+  ) {
+    return undefined;
+  }
+
+  const type = pricing.type;
+
+  return {
+    type: type as ServicePricing["type"],
+    startingPrice: normalizePrice(pricing.starting_price),
+    minPrice: normalizePrice(pricing.min_price),
+    maxPrice: normalizePrice(pricing.max_price),
+    inspectionFee: normalizePrice(pricing.inspection_fee),
+    note:
+      typeof pricing.note === "string"
+        ? pricing.note.trim()
+        : "",
+  };
+}
+
 function mapWordPressService(
   service: WordPressService,
 ): DirectoryService {
@@ -125,6 +178,8 @@ function mapWordPressService(
       slug: city.slug.trim(),
       name: city.name.trim(),
     }));
+
+  const pricing = mapServicePricing(service.pricing);
 
   return {
     slug: service.slug,
@@ -180,6 +235,8 @@ function mapWordPressService(
         : existingService?.faqs,
 
     hasStructuredCities: Boolean(mappedCities?.length),
+
+    pricing,
 
     rating:
       existingService?.rating ?? 0,
