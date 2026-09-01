@@ -41,12 +41,15 @@ function buildFallbackServiceDetail(
       service.availability ??
       "Available across major Mahir service areas.",
 
-    includedItems: [
-      "Professional inspection",
-      "Service-specific check",
-      "Safety review",
-      "Basic performance assessment",
-    ],
+    includedItems:
+      service.includedItems?.length
+        ? service.includedItems
+        : [
+            "Professional inspection",
+            "Service-specific check",
+            "Safety review",
+            "Basic performance assessment",
+          ],
 
     excludedItems: [
       "Replacement parts",
@@ -123,6 +126,11 @@ function mergeWordPressService(
     availability:
       liveService.availability ??
       existingDetail.availability,
+
+    includedItems:
+      liveService.includedItems?.length
+        ? liveService.includedItems
+        : existingDetail.includedItems,
 
     // Old hardcoded discount price disabled.
     originalPrice: undefined,
