@@ -51,12 +51,15 @@ function buildFallbackServiceDetail(
             "Basic performance assessment",
           ],
 
-    excludedItems: [
-      "Replacement parts",
-      "Gas refill unless selected separately",
-      "Major repair work",
-      "Electrical or structural modification",
-    ],
+    excludedItems:
+      service.excludedItems?.length
+        ? service.excludedItems
+        : [
+            "Replacement parts",
+            "Gas refill unless selected separately",
+            "Major repair work",
+            "Electrical or structural modification",
+          ],
 
     notes: [
       "Approximate duration may vary depending on the work scope.",
@@ -131,6 +134,11 @@ function mergeWordPressService(
       liveService.includedItems?.length
         ? liveService.includedItems
         : existingDetail.includedItems,
+
+    excludedItems:
+      liveService.excludedItems?.length
+        ? liveService.excludedItems
+        : existingDetail.excludedItems,
 
     // Old hardcoded discount price disabled.
     originalPrice: undefined,

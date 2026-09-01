@@ -29,6 +29,7 @@ export type DirectoryService = {
   duration?: string;
   availability?: string;
   includedItems?: readonly string[];
+  excludedItems?: readonly string[];
   rating: number;
   reviewCount: number;
   code: string;
