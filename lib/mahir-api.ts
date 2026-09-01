@@ -20,6 +20,7 @@ type WordPressService = {
   availability: string | null;
   included_items: string[];
   excluded_items: string[];
+  notes: string[];
   currency: string;
   category: {
     id: number;
@@ -113,6 +114,11 @@ function mapWordPressService(
       service.excluded_items?.length
         ? service.excluded_items
         : existingService?.excludedItems,
+
+    notes:
+      service.notes?.length
+        ? service.notes
+        : existingService?.notes,
 
     rating:
       existingService?.rating ?? 0,

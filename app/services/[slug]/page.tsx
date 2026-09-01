@@ -61,11 +61,14 @@ function buildFallbackServiceDetail(
             "Electrical or structural modification",
           ],
 
-    notes: [
-      "Approximate duration may vary depending on the work scope.",
-      "Standard tools and inspection steps are included in the service visit.",
-      "Additional parts or work require approval before proceeding.",
-    ],
+    notes:
+      service.notes?.length
+        ? service.notes
+        : [
+            "Approximate duration may vary depending on the work scope.",
+            "Standard tools and inspection steps are included in the service visit.",
+            "Additional parts or work require approval before proceeding.",
+          ],
 
     faqs: [
       {
@@ -139,6 +142,11 @@ function mergeWordPressService(
       liveService.excludedItems?.length
         ? liveService.excludedItems
         : existingDetail.excludedItems,
+
+    notes:
+      liveService.notes?.length
+        ? liveService.notes
+        : existingDetail.notes,
 
     // Old hardcoded discount price disabled.
     originalPrice: undefined,
