@@ -21,6 +21,10 @@ type WordPressService = {
   included_items: string[];
   excluded_items: string[];
   notes: string[];
+  faqs: Array<{
+    question: string;
+    answer: string;
+  }>;
   currency: string;
   category: {
     id: number;
@@ -72,6 +76,17 @@ function mapWordPressService(
     (item) => item.slug === service.slug,
   );
 
+  const validFaqs = service.faqs
+    ?.filter(
+      (faq) =>
+        faq.question.trim() !== "" &&
+        faq.answer.trim() !== "",
+    )
+    .map((faq) => ({
+      question: faq.question.trim(),
+      answer: faq.answer.trim(),
+    }));
+
   return {
     slug: service.slug,
 
@@ -119,6 +134,11 @@ function mapWordPressService(
       service.notes?.length
         ? service.notes
         : existingService?.notes,
+
+    faqs:
+      validFaqs?.length
+        ? validFaqs
+        : existingService?.faqs,
 
     rating:
       existingService?.rating ?? 0,

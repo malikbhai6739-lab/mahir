@@ -70,25 +70,28 @@ function buildFallbackServiceDetail(
             "Additional parts or work require approval before proceeding.",
           ],
 
-    faqs: [
-      {
-        question: "What does this service include?",
-        answer:
-          "This service includes a professional assessment, service-specific checks, and a practical completion review performed by a verified Mahir technician.",
-      },
-      {
-        question: "How long does it take?",
-        answer:
-          service.duration
-            ? `Estimated service duration is ${service.duration}.`
-            : "Most visits take about 60 to 90 minutes depending on the service and property conditions.",
-      },
-      {
-        question: "Are extra materials included?",
-        answer:
-          "Standard service work is included, but parts, gas, or additional materials are quoted separately when required.",
-      },
-    ],
+    faqs:
+      service.faqs?.length
+        ? service.faqs
+        : [
+            {
+              question: "What does this service include?",
+              answer:
+                "This service includes a professional assessment, service-specific checks, and a practical completion review performed by a verified Mahir technician.",
+            },
+            {
+              question: "How long does it take?",
+              answer:
+                service.duration
+                  ? `Estimated service duration is ${service.duration}.`
+                  : "Most visits take about 60 to 90 minutes depending on the service and property conditions.",
+            },
+            {
+              question: "Are extra materials included?",
+              answer:
+                "Standard service work is included, but parts, gas, or additional materials are quoted separately when required.",
+            },
+          ],
 
     reviews: [],
   };
@@ -147,6 +150,11 @@ function mergeWordPressService(
       liveService.notes?.length
         ? liveService.notes
         : existingDetail.notes,
+
+    faqs:
+      liveService.faqs?.length
+        ? liveService.faqs
+        : existingDetail.faqs,
 
     // Old hardcoded discount price disabled.
     originalPrice: undefined,
