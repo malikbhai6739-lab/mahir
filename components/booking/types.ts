@@ -23,6 +23,7 @@ export type CustomerDetails = {
 export type Schedule = {
   dateLabel: string;
   dateValue: string;
+  isoDate?: string;
   slot: string;
 };
 

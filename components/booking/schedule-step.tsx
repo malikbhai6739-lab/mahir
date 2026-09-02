@@ -4,13 +4,25 @@ type ScheduleStepProps = {
   schedule: Schedule;
   dates: Schedule[];
   slots: string[];
+  loadingSlots?: boolean;
+  slotsError?: string | null;
   onDateChange: (date: Schedule) => void;
   onSlotChange: (slot: string) => void;
   onBack: () => void;
   onContinue: () => void;
 };
 
-export function ScheduleStep({ schedule, dates, slots, onDateChange, onSlotChange, onBack, onContinue }: ScheduleStepProps) {
+export function ScheduleStep({
+  schedule,
+  dates,
+  slots,
+  loadingSlots = false,
+  slotsError = null,
+  onDateChange,
+  onSlotChange,
+  onBack,
+  onContinue,
+}: ScheduleStepProps) {
   return (
     <section aria-labelledby="schedule-heading">
       <p className="text-xs font-semibold uppercase tracking-[0.13em] text-brand">Step 2</p>
@@ -20,22 +32,56 @@ export function ScheduleStep({ schedule, dates, slots, onDateChange, onSlotChang
       <div className="mt-8">
         <h2 className="text-lg font-bold text-foreground">Available dates</h2>
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
-          {dates.map((date) => (
-            <button key={date.dateValue} type="button" onClick={() => onDateChange(date)} aria-pressed={schedule.dateValue === date.dateValue} className={`min-h-20 rounded-2xl border p-3 text-left transition-colors ${schedule.dateValue === date.dateValue ? "border-brand bg-brand-soft" : "border-line bg-white hover:border-brand/50"}`}>
-              <span className="block text-sm font-semibold text-foreground">{date.dateLabel}</span>
-              <span className="mt-1 block text-xs text-muted">{date.dateValue}</span>
-            </button>
-          ))}
+          {dates.map((date) => {
+            const isSelected = schedule.isoDate && date.isoDate
+              ? schedule.isoDate === date.isoDate
+              : schedule.dateValue === date.dateValue;
+
+            return (
+              <button
+                key={date.isoDate || date.dateValue}
+                type="button"
+                onClick={() => onDateChange(date)}
+                aria-pressed={isSelected}
+                className={`min-h-20 rounded-2xl border p-3 text-left transition-colors ${isSelected ? "border-brand bg-brand-soft" : "border-line bg-white hover:border-brand/50"}`}
+              >
+                <span className="block text-sm font-semibold text-foreground">{date.dateLabel}</span>
+                <span className="mt-1 block text-xs text-muted">{date.dateValue}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       <div className="mt-8">
         <h2 className="text-lg font-bold text-foreground">Time slots</h2>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {slots.map((slot) => (
-            <button key={slot} type="button" onClick={() => onSlotChange(slot)} aria-pressed={schedule.slot === slot} className={`min-h-14 rounded-xl border px-4 text-left text-sm font-semibold transition-colors ${schedule.slot === slot ? "border-brand bg-brand-soft text-brand" : "border-line bg-white text-foreground hover:border-brand/50"}`}>{slot}</button>
-          ))}
-        </div>
+        {loadingSlots ? (
+          <div className="mt-4 rounded-xl border border-line bg-white p-6 text-center text-sm font-medium text-muted">
+            Loading available times...
+          </div>
+        ) : slotsError ? (
+          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {slotsError}
+          </div>
+        ) : slots.length === 0 ? (
+          <div className="mt-4 rounded-xl border border-line bg-white p-6 text-center text-sm font-medium text-muted">
+            No time slots are available for this date.
+          </div>
+        ) : (
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {slots.map((slot) => (
+              <button
+                key={slot}
+                type="button"
+                onClick={() => onSlotChange(slot)}
+                aria-pressed={schedule.slot === slot}
+                className={`min-h-14 rounded-xl border px-4 text-left text-sm font-semibold transition-colors ${schedule.slot === slot ? "border-brand bg-brand-soft text-brand" : "border-line bg-white text-foreground hover:border-brand/50"}`}
+              >
+                {slot}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="mt-8 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

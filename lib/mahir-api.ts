@@ -413,3 +413,101 @@ export async function getWordPressCategories(): Promise<
     return [];
   }
 }
+
+export type BookingSlot = {
+  startTime: string;
+  endTime: string;
+  available: boolean;
+};
+
+export type ServiceSlotsResponse = {
+  service: {
+    id: number;
+    slug: string;
+    name: string;
+  };
+  city: {
+    id: number;
+    slug: string;
+    name: string;
+  };
+  date: string;
+  timezone: string;
+  slotDurationMinutes: number;
+  slots: BookingSlot[];
+};
+
+type WordPressSlotsApiResponse = {
+  success?: boolean;
+  code?: string;
+  message?: string;
+  data?: {
+    service?: { id: number; slug: string; name: string };
+    city?: { id: number; slug: string; name: string };
+    date?: string;
+    timezone?: string;
+    slot_duration_minutes?: number;
+    slots?: Array<{
+      start_time: string;
+      end_time: string;
+      available: boolean;
+    }>;
+  };
+};
+
+export async function fetchServiceSlots(
+  serviceSlug: string,
+  date: string,
+  citySlug: string,
+): Promise<ServiceSlotsResponse> {
+  const cacheBuster = Date.now();
+  const params = new URLSearchParams({
+    service: serviceSlug,
+    date,
+    city: citySlug,
+    _: String(cacheBuster),
+  });
+
+  const response = await fetch(`${MAHIR_API_URL}/slots?${params.toString()}`, {
+    cache: "no-store",
+    headers: {
+      "Cache-Control": "no-cache, no-store, must-revalidate",
+      Pragma: "no-cache",
+    },
+  });
+
+  const result = (await response.json()) as WordPressSlotsApiResponse;
+
+  if (!response.ok || !result.success || !result.data) {
+    const errorMessage =
+      result.message || `Unable to fetch time slots (${response.status})`;
+    throw new Error(errorMessage);
+  }
+
+  const { service, city, timezone, slot_duration_minutes, slots } = result.data;
+
+  if (!service || !city || !Array.isArray(slots)) {
+    throw new Error("Invalid slots data received from API.");
+  }
+
+  return {
+    service: {
+      id: service.id,
+      slug: service.slug,
+      name: service.name,
+    },
+    city: {
+      id: city.id,
+      slug: city.slug,
+      name: city.name,
+    },
+    date: result.data.date || date,
+    timezone: timezone || "Asia/Karachi",
+    slotDurationMinutes: slot_duration_minutes ?? 60,
+    slots: slots.map((slot) => ({
+      startTime: slot.start_time,
+      endTime: slot.end_time,
+      available: Boolean(slot.available),
+    })),
+  };
+}
