@@ -470,10 +470,6 @@ export async function fetchServiceSlots(
 
   const response = await fetch(`${MAHIR_API_URL}/slots?${params.toString()}`, {
     cache: "no-store",
-    headers: {
-      "Cache-Control": "no-cache, no-store, must-revalidate",
-      Pragma: "no-cache",
-    },
   });
 
   const result = (await response.json()) as WordPressSlotsApiResponse;
