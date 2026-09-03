@@ -1,14 +1,30 @@
-"use client";
-
-import { useState } from "react";
 import type { CustomerProfile } from "@/data/profile";
 
-const inputClass = "mt-2 h-12 w-full rounded-xl border border-line bg-white px-3 text-base text-foreground outline-none focus:border-brand";
-
-export function PersonalInfoForm({ profile, onSave }: { profile: CustomerProfile; onSave: (profile: CustomerProfile) => void }) {
-  const [draft, setDraft] = useState(profile);
-  const [editing, setEditing] = useState(false);
-  const update = (field: keyof CustomerProfile, value: string) => setDraft((current) => ({ ...current, [field]: value }));
-  const cancel = () => { setDraft(profile); setEditing(false); };
-  return <section id="personal-information" className="rounded-[1.5rem] border border-line bg-white p-5 shadow-card sm:p-6"><div className="flex items-center justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.13em] text-brand">Account details</p><h2 className="mt-2 text-2xl font-bold text-foreground">Personal Information</h2></div>{!editing ? <button type="button" onClick={() => setEditing(true)} className="inline-flex min-h-11 items-center rounded-xl border border-line px-4 text-sm font-semibold text-foreground hover:border-brand hover:text-brand">Edit</button> : null}</div>{editing ? <div className="mt-6 grid gap-4 sm:grid-cols-2"><label className="text-sm font-semibold text-foreground">Full Name<input value={draft.fullName} onChange={(event) => update("fullName", event.target.value)} className={inputClass} required /></label><label className="text-sm font-semibold text-foreground">Phone Number<input value={draft.phone} onChange={(event) => update("phone", event.target.value)} className={inputClass} required pattern="03[0-9]{9}" /></label><label className="text-sm font-semibold text-foreground">Email<input type="email" value={draft.email} onChange={(event) => update("email", event.target.value)} className={inputClass} /></label><label className="text-sm font-semibold text-foreground">City<input value={draft.city} onChange={(event) => update("city", event.target.value)} className={inputClass} required /></label><div className="flex flex-col-reverse gap-3 sm:col-span-2 sm:flex-row sm:justify-end"><button type="button" onClick={cancel} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-line px-5 text-sm font-semibold text-foreground hover:border-brand hover:text-brand">Cancel</button><button type="button" onClick={() => { onSave(draft); setEditing(false); }} disabled={!draft.fullName.trim() || !/^03\d{9}$/.test(draft.phone.replace(/\s/g, ""))} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-brand px-5 text-sm font-semibold text-white hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40">Save</button></div></div> : <dl className="mt-6 grid gap-5 sm:grid-cols-2"><div><dt className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Full Name</dt><dd className="mt-2 font-semibold text-foreground">{profile.fullName}</dd></div><div><dt className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Phone Number</dt><dd className="mt-2 font-semibold text-foreground">{profile.phone}</dd></div><div><dt className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Email</dt><dd className="mt-2 font-semibold text-foreground">{profile.email}</dd></div><div><dt className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">City</dt><dd className="mt-2 font-semibold text-foreground">{profile.city}</dd></div></dl>}</section>;
+export function PersonalInfoForm({ profile }: { profile: CustomerProfile }) {
+  return (
+    <section id="personal-information" className="rounded-[1.5rem] border border-line bg-white p-5 shadow-card sm:p-6">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.13em] text-brand">Account details</p>
+        <h2 className="mt-2 text-2xl font-bold text-foreground">Personal Information</h2>
+      </div>
+      <dl className="mt-6 grid gap-5 sm:grid-cols-2">
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Full Name</dt>
+          <dd className="mt-2 font-semibold text-foreground">{profile.fullName}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Phone Number</dt>
+          <dd className="mt-2 font-semibold text-foreground">{profile.phone}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Email</dt>
+          <dd className="mt-2 font-semibold text-foreground">{profile.email || "Email not added"}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">City</dt>
+          <dd className="mt-2 font-semibold text-foreground">{profile.city && profile.city !== "Not specified" ? profile.city : "Not specified"}</dd>
+        </div>
+      </dl>
+    </section>
+  );
 }

@@ -6,8 +6,29 @@ import { verifyOtp, requestOtp, setAuthToken, MahirApiError } from "@/lib/mahir-
 
 function maskPhone(phone: string) {
   if (!phone) return "";
-  const clean = phone.startsWith("0") ? phone.slice(1) : phone;
-  return `+92 ${clean.slice(0, 1)}** *** ${clean.slice(-4)}`;
+
+  // Strip non-digit characters.
+  const digits = phone.replace(/\D/g, "");
+
+  // Normalize to 10-digit national number: 3XXXXXXXXX
+  let localDigits = digits;
+  if (localDigits.startsWith("92")) {
+    localDigits = localDigits.slice(2);
+  } else if (localDigits.startsWith("0")) {
+    localDigits = localDigits.slice(1);
+  }
+
+  // Standard 10-digit Pakistani mobile number starting with 3
+  if (localDigits.length === 10) {
+    return `+92 ${localDigits[0]}** *** ${localDigits.slice(-4)}`;
+  }
+
+  // Fallback for other valid lengths
+  if (localDigits.length > 4) {
+    return `+92 ${localDigits[0]}** *** ${localDigits.slice(-4)}`;
+  }
+
+  return phone;
 }
 
 export function OtpVerificationForm({ phone, nextPath }: { phone: string; nextPath: string }) {
