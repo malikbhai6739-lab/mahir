@@ -850,6 +850,68 @@ export async function fetchCurrentCustomer(
   return result;
 }
 
+export type UpdateCustomerInput = {
+  full_name?: string | null;
+  email?: string | null;
+};
+
+export type UpdateCustomerResponse = {
+  success: boolean;
+  data?: {
+    customer: AuthCustomer;
+  };
+};
+
+export async function updateCurrentCustomer(
+  token: string,
+  data: UpdateCustomerInput,
+): Promise<UpdateCustomerResponse> {
+  const payload: Record<string, unknown> = {};
+
+  if ("full_name" in data) {
+    payload.full_name =
+      typeof data.full_name === "string" ? data.full_name.trim() : data.full_name;
+  }
+
+  if ("email" in data) {
+    payload.email =
+      typeof data.email === "string" ? data.email.trim() : data.email;
+  }
+
+  const response = await fetch(`${MAHIR_API_URL}/auth/me`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  let result:
+    | (UpdateCustomerResponse & WordPressAuthApiErrorResponse)
+    | null = null;
+
+  try {
+    result = (await response.json()) as UpdateCustomerResponse &
+      WordPressAuthApiErrorResponse;
+  } catch {
+    throw new MahirApiError(
+      `Unable to update profile (${response.status}).`,
+      response.status,
+    );
+  }
+
+  if (!response.ok || !result.success) {
+    throw new MahirApiError(
+      result?.message || `Unable to update profile (${response.status}).`,
+      response.status,
+      result?.code,
+    );
+  }
+
+  return result;
+}
+
 export {
   MAHIR_AUTH_TOKEN_KEY,
   getAuthToken,

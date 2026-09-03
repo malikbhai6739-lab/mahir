@@ -19,6 +19,7 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [customer, setCustomer] = useState<AuthCustomer | null>(null);
   const [reloadTrigger, setReloadTrigger] = useState(0);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   const profile: CustomerProfile | null = customer
     ? {
@@ -167,7 +168,15 @@ export default function ProfilePage() {
           </div>
           <div className="grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.65fr)]">
             <div className="space-y-8">
-              <ProfileSummary profile={profile} />
+              <ProfileSummary
+                profile={profile}
+                onEdit={() => {
+                  setIsEditingProfile(true);
+                  document
+                    .getElementById("personal-information")
+                    ?.scrollIntoView({ behavior: "smooth" });
+                }}
+              />
               {upcomingOrder ? (
                 <section aria-labelledby="upcoming-booking-heading">
                   <div className="mb-4 flex items-center justify-between gap-4">
@@ -229,7 +238,17 @@ export default function ProfilePage() {
                   )}
                 </div>
               </section>
-              <PersonalInfoForm profile={profile} />
+              <PersonalInfoForm
+                customer={customer}
+                profile={profile}
+                isEditing={isEditingProfile}
+                onStartEdit={() => setIsEditingProfile(true)}
+                onCancelEdit={() => setIsEditingProfile(false)}
+                onCustomerUpdated={(updated) => {
+                  setCustomer(updated);
+                  setIsEditingProfile(false);
+                }}
+              />
               <section
                 id="support"
                 className="rounded-2xl border border-line bg-white p-5 shadow-card"

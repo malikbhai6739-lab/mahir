@@ -1,6 +1,12 @@
 import type { CustomerProfile } from "@/data/profile";
 
-export function ProfileSummary({ profile }: { profile: CustomerProfile }) {
+export function ProfileSummary({
+  profile,
+  onEdit,
+}: {
+  profile: CustomerProfile;
+  onEdit?: () => void;
+}) {
   const initials = profile.fullName
     .split(" ")
     .filter(Boolean)
@@ -27,6 +33,15 @@ export function ProfileSummary({ profile }: { profile: CustomerProfile }) {
             {profile.email || "Email not added"}
           </p>
         </div>
+        {onEdit ? (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-line px-4 text-sm font-semibold text-foreground transition-colors hover:border-brand hover:text-brand"
+          >
+            Edit Profile
+          </button>
+        ) : null}
       </div>
     </section>
   );
