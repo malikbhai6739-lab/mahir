@@ -14,14 +14,17 @@ type ReviewStepProps = {
   estimatedTotal: number;
   onBack: () => void;
   onConfirm: () => void;
+  isSubmitting: boolean;
+  submissionError?: string | null;
 };
 
-export function ReviewStep({ items, address, schedule, customer, subtotal, discount, estimatedTotal, onBack, onConfirm }: ReviewStepProps) {
+export function ReviewStep({ items, address, schedule, customer, subtotal, discount, estimatedTotal, onBack, onConfirm, isSubmitting, submissionError = null }: ReviewStepProps) {
   return (
     <section aria-labelledby="review-heading">
       <p className="text-xs font-semibold uppercase tracking-[0.13em] text-brand">Step 3</p>
       <h1 id="review-heading" className="mt-3 text-3xl font-bold tracking-[-0.02em] text-foreground sm:text-4xl">Review Your Booking</h1>
       <p className="mt-3 text-base leading-7 text-muted">Check the details below before confirming your service visit.</p>
+      {submissionError ? <p role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{submissionError}</p> : null}
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(18rem,0.7fr)]">
         <div className="space-y-6">
@@ -41,10 +44,10 @@ export function ReviewStep({ items, address, schedule, customer, subtotal, disco
             <div className="rounded-2xl border border-line bg-white p-5 shadow-card"><h2 className="text-lg font-bold text-foreground">Address</h2><p className="mt-3 font-semibold text-foreground">{address.label}</p><p className="mt-1 text-sm leading-6 text-muted">{address.fullAddress}</p><p className="mt-1 text-sm text-muted">{address.city}</p></div>
             <div className="rounded-2xl border border-line bg-white p-5 shadow-card"><h2 className="text-lg font-bold text-foreground">Schedule</h2><p className="mt-3 font-semibold text-foreground">{schedule.dateLabel}, {schedule.dateValue}</p><p className="mt-1 text-sm text-muted">{schedule.slot}</p></div>
           </div>
-          <div className="rounded-2xl border border-line bg-white p-5 shadow-card"><h2 className="text-lg font-bold text-foreground">Customer</h2><p className="mt-3 font-semibold text-foreground">{customer.fullName}</p><p className="mt-1 text-sm text-muted">{customer.phone}</p></div>
+          <div className="rounded-2xl border border-line bg-white p-5 shadow-card"><h2 className="text-lg font-bold text-foreground">Customer</h2><p className="mt-3 font-semibold text-foreground">{customer.fullName}</p><p className="mt-1 text-sm text-muted">{customer.phone}</p>{customer.email ? <p className="mt-1 text-sm text-muted">{customer.email}</p> : null}</div>
         </div>
 
-        <aside className="h-fit rounded-2xl border border-line bg-white p-5 shadow-card lg:sticky lg:top-24"><h2 className="text-xl font-bold text-foreground">Price Summary</h2><dl className="mt-5 space-y-3 text-sm text-muted"><div className="flex justify-between gap-4"><dt>Subtotal</dt><dd className="font-medium text-foreground">PKR {priceFormatter.format(subtotal)}</dd></div><div className="flex justify-between gap-4"><dt>Discount</dt><dd className="font-medium text-success">- PKR {priceFormatter.format(discount)}</dd></div><div className="flex justify-between gap-4"><dt>Service fee</dt><dd className="font-medium text-foreground">PKR 0</dd></div><div className="border-t border-line pt-3"><div className="flex justify-between gap-4 text-base font-bold text-foreground"><dt>Estimated total</dt><dd>PKR {priceFormatter.format(estimatedTotal)}</dd></div></div></dl><p className="mt-5 text-sm leading-6 text-muted">Additional parts or materials, if required, will be confirmed before work begins.</p><div className="mt-6 flex flex-col gap-3"><button type="button" onClick={onConfirm} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-brand px-5 text-base font-semibold text-white transition-colors hover:bg-brand-dark">Confirm Booking</button><button type="button" onClick={onBack} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-line bg-white px-5 text-base font-semibold text-foreground transition-colors hover:border-brand hover:text-brand">Back</button></div></aside>
+        <aside className="h-fit rounded-2xl border border-line bg-white p-5 shadow-card lg:sticky lg:top-24"><h2 className="text-xl font-bold text-foreground">Price Summary</h2><dl className="mt-5 space-y-3 text-sm text-muted"><div className="flex justify-between gap-4"><dt>Subtotal</dt><dd className="font-medium text-foreground">PKR {priceFormatter.format(subtotal)}</dd></div><div className="flex justify-between gap-4"><dt>Discount</dt><dd className="font-medium text-success">- PKR {priceFormatter.format(discount)}</dd></div><div className="flex justify-between gap-4"><dt>Service fee</dt><dd className="font-medium text-foreground">PKR 0</dd></div><div className="border-t border-line pt-3"><div className="flex justify-between gap-4 text-base font-bold text-foreground"><dt>Estimated total</dt><dd>PKR {priceFormatter.format(estimatedTotal)}</dd></div></div></dl><p className="mt-5 text-sm leading-6 text-muted">Additional parts or materials, if required, will be confirmed before work begins.</p><div className="mt-6 flex flex-col gap-3"><button type="button" onClick={onConfirm} disabled={isSubmitting} aria-busy={isSubmitting} className="inline-flex min-h-12 items-center justify-center rounded-xl bg-brand px-5 text-base font-semibold text-white transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-60">{isSubmitting ? "Confirming booking..." : "Confirm Booking"}</button><button type="button" onClick={onBack} disabled={isSubmitting} className="inline-flex min-h-12 items-center justify-center rounded-xl border border-line bg-white px-5 text-base font-semibold text-foreground transition-colors hover:border-brand hover:text-brand disabled:cursor-not-allowed disabled:opacity-60">Back</button></div></aside>
       </div>
     </section>
   );

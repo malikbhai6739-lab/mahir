@@ -507,3 +507,199 @@ export async function fetchServiceSlots(
     })),
   };
 }
+
+export type CreateBookingInput = {
+  service: string;
+  city: string;
+  date: string;
+  slotStart: string;
+  customer: {
+    name: string;
+    phone: string;
+    email?: string;
+  };
+  address: {
+    line: string;
+    city: string;
+    notes?: string;
+  };
+};
+
+export type CreatedBooking = {
+  id: number;
+  bookingNumber: string;
+  status: "confirmed";
+  service: {
+    id: number;
+    slug: string;
+    name: string;
+  };
+  city: {
+    id: number;
+    slug: string;
+    name: string;
+  };
+  date: string;
+  slot: {
+    startTime: string;
+    endTime: string;
+  };
+  customer: {
+    name: string;
+    phone: string;
+    email: string | null;
+  };
+  address: {
+    line: string;
+    city: string;
+    notes: string | null;
+  };
+  pricing: {
+    type: string;
+    startingPrice: number | null;
+    quotedPrice: number | null;
+    currency: string;
+  };
+  createdAt: string;
+};
+
+type WordPressBookingApiResponse = {
+  success?: boolean;
+  code?: string;
+  message?: string;
+  data?: {
+    id: number;
+    booking_number: string;
+    status: "confirmed";
+    service: { id: number; slug: string; name: string };
+    city: { id: number; slug: string; name: string };
+    date: string;
+    slot: { start_time: string; end_time: string };
+    customer: { name: string; phone: string; email: string | null };
+    address: { line: string; city: string; notes: string | null };
+    pricing: {
+      type: string;
+      starting_price: number | null;
+      quoted_price: number | null;
+      currency: string;
+    };
+    created_at: string;
+  };
+};
+
+export class MahirApiError extends Error {
+  readonly status: number;
+  readonly code?: string;
+
+  constructor(message: string, status: number, code?: string) {
+    super(message);
+    this.name = "MahirApiError";
+    this.status = status;
+    this.code = code;
+  }
+}
+
+export async function createBooking(
+  input: CreateBookingInput,
+): Promise<CreatedBooking> {
+  const customer = {
+    name: input.customer.name,
+    phone: input.customer.phone,
+    ...(input.customer.email ? { email: input.customer.email } : {}),
+  };
+  const address = {
+    line: input.address.line,
+    city: input.address.city,
+    ...(input.address.notes ? { notes: input.address.notes } : {}),
+  };
+
+  const response = await fetch(`${MAHIR_API_URL}/bookings`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      service: input.service,
+      city: input.city,
+      date: input.date,
+      slot_start: input.slotStart,
+      customer,
+      address,
+    }),
+  });
+
+  let result: WordPressBookingApiResponse | null = null;
+
+  try {
+    result = (await response.json()) as WordPressBookingApiResponse;
+  } catch {
+    throw new MahirApiError(
+      `Unable to create booking (${response.status}).`,
+      response.status,
+    );
+  }
+
+  if (!response.ok) {
+    throw new MahirApiError(
+      result.message || `Unable to create booking (${response.status}).`,
+      response.status,
+      result.code,
+    );
+  }
+
+  const booking = result.data;
+
+  if (
+    !result.success ||
+    !booking ||
+    typeof booking.id !== "number" ||
+    !booking.booking_number ||
+    booking.status !== "confirmed" ||
+    !booking.service?.slug ||
+    !booking.city?.slug ||
+    !booking.date ||
+    !booking.slot?.start_time ||
+    !booking.slot?.end_time ||
+    !booking.customer?.name ||
+    !booking.address?.line ||
+    !booking.pricing ||
+    typeof booking.pricing.type !== "string" ||
+    !booking.pricing.type.trim() ||
+    (booking.pricing.starting_price !== null &&
+      (typeof booking.pricing.starting_price !== "number" ||
+        !Number.isFinite(booking.pricing.starting_price))) ||
+    (booking.pricing.quoted_price !== null &&
+      (typeof booking.pricing.quoted_price !== "number" ||
+        !Number.isFinite(booking.pricing.quoted_price))) ||
+    typeof booking.pricing.currency !== "string" ||
+    !booking.pricing.currency.trim() ||
+    !booking.created_at
+  ) {
+    throw new MahirApiError(
+      "Invalid booking data received from API.",
+      response.status,
+    );
+  }
+
+  return {
+    id: booking.id,
+    bookingNumber: booking.booking_number,
+    status: booking.status,
+    service: booking.service,
+    city: booking.city,
+    date: booking.date,
+    slot: {
+      startTime: booking.slot.start_time,
+      endTime: booking.slot.end_time,
+    },
+    customer: booking.customer,
+    address: booking.address,
+    pricing: {
+      type: booking.pricing.type,
+      startingPrice: booking.pricing.starting_price,
+      quotedPrice: booking.pricing.quoted_price,
+      currency: booking.pricing.currency,
+    },
+    createdAt: booking.created_at,
+  };
+}

@@ -55,13 +55,14 @@ export function ScheduleStep({
 
       <div className="mt-8">
         <h2 className="text-lg font-bold text-foreground">Time slots</h2>
+        {slotsError ? (
+          <div role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            {slotsError}
+          </div>
+        ) : null}
         {loadingSlots ? (
           <div className="mt-4 rounded-xl border border-line bg-white p-6 text-center text-sm font-medium text-muted">
             Loading available times...
-          </div>
-        ) : slotsError ? (
-          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            {slotsError}
           </div>
         ) : slots.length === 0 ? (
           <div className="mt-4 rounded-xl border border-line bg-white p-6 text-center text-sm font-medium text-muted">

@@ -64,6 +64,7 @@ export function AddressStep({
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <label className="text-sm font-semibold text-foreground">Full name<input required value={customer.fullName} onChange={(event) => onCustomerChange("fullName", event.target.value)} className={inputClass} /></label>
             <label className="text-sm font-semibold text-foreground">Phone number<input required type="tel" value={customer.phone} onChange={(event) => onCustomerChange("phone", event.target.value)} className={inputClass} /></label>
+            <label className="text-sm font-semibold text-foreground sm:col-span-2">Email <span className="font-normal text-muted">(optional)</span><input type="email" value={customer.email} onChange={(event) => onCustomerChange("email", event.target.value)} className={inputClass} /></label>
             <label className="text-sm font-semibold text-foreground sm:col-span-2">Address<input required value={customer.address} onChange={(event) => onCustomerChange("address", event.target.value)} className={inputClass} /></label>
             <label className="text-sm font-semibold text-foreground">Area<input required value={customer.area} onChange={(event) => onCustomerChange("area", event.target.value)} className={inputClass} /></label>
             <label className="text-sm font-semibold text-foreground">City<input required value={customer.city} onChange={(event) => onCustomerChange("city", event.target.value)} className={inputClass} /></label>

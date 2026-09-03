@@ -14,6 +14,7 @@ export type Address = {
 export type CustomerDetails = {
   fullName: string;
   phone: string;
+  email: string;
   address: string;
   area: string;
   city: string;
@@ -25,10 +26,14 @@ export type Schedule = {
   dateValue: string;
   isoDate?: string;
   slot: string;
+  slotStart?: string;
+  slotEnd?: string;
 };
 
 export type BookingSnapshot = {
-  bookingId?: string;
+  id: number;
+  bookingId: string;
+  status: "confirmed";
   items: CartLineItem[];
   address: Address;
   schedule: Schedule;

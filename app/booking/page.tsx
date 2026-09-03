@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AddressStep } from "@/components/booking/address-step";
 import { BookingProgress } from "@/components/booking/booking-progress";
 import { ConfirmationStep } from "@/components/booking/confirmation-step";
@@ -12,7 +12,8 @@ import { useCart } from "@/components/cart/cart-context";
 import { useOrders } from "@/components/orders/order-context";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
-import { fetchServiceSlots, type BookingSlot } from "@/lib/mahir-api";
+import { mockCustomerProfile } from "@/data/profile";
+import { createBooking, fetchServiceSlots, MahirApiError, type BookingSlot } from "@/lib/mahir-api";
 
 const savedAddresses: Address[] = [
   {
@@ -30,8 +31,9 @@ const savedAddresses: Address[] = [
 ];
 
 const initialCustomer: CustomerDetails = {
-  fullName: "",
-  phone: "",
+  fullName: mockCustomerProfile.fullName,
+  phone: mockCustomerProfile.phone,
+  email: mockCustomerProfile.email,
   address: "",
   area: "",
   city: "",
@@ -49,6 +51,31 @@ function format24to12(timeStr: string): string {
 
 function formatSlotDisplay(slot: BookingSlot): string {
   return `${format24to12(slot.startTime)} - ${format24to12(slot.endTime)}`;
+}
+
+function formatBookingDate(isoDate: string): string {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+
+  return date.toLocaleDateString("en-PK", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatCreatedAt(createdAt: string, fallbackDate: string): string {
+  const date = new Date(createdAt);
+
+  if (Number.isNaN(date.getTime())) {
+    return formatBookingDate(fallbackDate);
+  }
+
+  return date.toLocaleDateString("en-PK", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 function getAvailableBookingDates(): Schedule[] {
@@ -106,9 +133,12 @@ export default function BookingPage() {
       : { dateLabel: "", dateValue: "", slot: "" },
   );
 
-  const [slots, setSlots] = useState<string[]>([]);
+  const [slots, setSlots] = useState<BookingSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [slotsError, setSlotsError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const submissionInFlight = useRef(false);
 
   const selectedAddress =
     savedAddresses.find((address) => address.id === selectedAddressId) ??
@@ -148,9 +178,9 @@ export default function BookingPage() {
           citySlug,
         );
         if (!isMounted) return;
-        const availableSlotsList = response.slots
-          .filter((slot) => slot.available)
-          .map((slot) => formatSlotDisplay(slot));
+        const availableSlotsList = response.slots.filter(
+          (slot) => slot.available,
+        );
 
         setSlots(availableSlotsList);
       } catch (error) {
@@ -181,14 +211,24 @@ export default function BookingPage() {
   ) => {
     setCustomer((current) => ({ ...current, [field]: value }));
     if (field === "city") {
-      setSchedule((current) => ({ ...current, slot: "" }));
+      setSchedule((current) => ({
+        ...current,
+        slot: "",
+        slotStart: undefined,
+        slotEnd: undefined,
+      }));
     }
   };
 
   const handleSelectAddress = (id: string) => {
     setSelectedAddressId(id);
     setShowNewAddress(false);
-    setSchedule((current) => ({ ...current, slot: "" }));
+    setSchedule((current) => ({
+      ...current,
+      slot: "",
+      slotStart: undefined,
+      slotEnd: undefined,
+    }));
     const address = savedAddresses.find((item) => item.id === id);
     if (address) {
       setCustomer((current) => ({
@@ -205,6 +245,8 @@ export default function BookingPage() {
       dateValue: date.dateValue,
       isoDate: date.isoDate,
       slot: "",
+      slotStart: undefined,
+      slotEnd: undefined,
     });
   };
 
@@ -214,8 +256,9 @@ export default function BookingPage() {
         ...current,
         address: activeAddress.fullAddress,
         city: activeAddress.city,
-        fullName: current.fullName || "Mahir customer",
-        phone: current.phone || "0300 0000000",
+        fullName: current.fullName || mockCustomerProfile.fullName,
+        phone: current.phone || mockCustomerProfile.phone,
+        email: current.email || mockCustomerProfile.email,
       }));
     }
     setStep(2);
@@ -223,47 +266,134 @@ export default function BookingPage() {
 
   const continueFromSchedule = () => setStep(3);
 
-  const confirmBooking = () => {
-    const bookingId = "MHR-2026-00125";
-    const snapshot = {
-      bookingId,
-      items,
-      address: activeAddress,
-      schedule,
-      customer,
-      estimatedTotal,
-    };
-    addOrder({
-      id: `order-${bookingId.toLowerCase()}`,
-      bookingId,
-      serviceTitle: items.map((item) => item.title).join(", "),
-      serviceSlug: items[0].slug,
-      serviceImage: items[0].image,
-      quantity: items.reduce((sum, item) => sum + item.quantity, 0),
-      status: "confirmed",
-      date: `${schedule.dateLabel}, ${schedule.dateValue}`,
-      time: schedule.slot,
-      address: activeAddress.fullAddress,
-      city: activeAddress.city,
-      subtotal,
-      discount,
-      serviceFee: 0,
-      total: estimatedTotal,
-      timeline: [
-        { label: "Booking Confirmed", completed: true, current: true },
-        { label: "Professional Assigned", completed: false },
-        { label: "Professional On the Way", completed: false },
-        { label: "Service Started", completed: false },
-        { label: "Completed", completed: false },
-      ],
-      createdAt: new Date().toLocaleDateString("en-PK", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }),
-    });
-    setBooking(snapshot);
-    setStep(4);
+  const confirmBooking = async () => {
+    if (submissionInFlight.current) {
+      return;
+    }
+
+    const service = items[0];
+    const slotStart = schedule.slotStart;
+
+    if (!service || !citySlug || !selectedIsoDate || !slotStart) {
+      setSubmissionError(
+        "Some booking details are missing. Please review your address and schedule.",
+      );
+      return;
+    }
+
+    submissionInFlight.current = true;
+    setIsSubmitting(true);
+    setSubmissionError(null);
+
+    try {
+      const result = await createBooking({
+        service: service.slug,
+        city: citySlug,
+        date: selectedIsoDate,
+        slotStart,
+        customer: {
+          name: customer.fullName.trim(),
+          phone: customer.phone.trim(),
+          email: customer.email.trim() || undefined,
+        },
+        address: {
+          line: activeAddress.fullAddress.trim(),
+          city: activeAddress.city.trim(),
+          notes:
+            activeAddress.landmark?.trim() ||
+            customer.landmark.trim() ||
+            undefined,
+        },
+      });
+      const confirmedSlot = formatSlotDisplay({
+        startTime: result.slot.startTime,
+        endTime: result.slot.endTime,
+        available: false,
+      });
+      const confirmedSchedule: Schedule = {
+        ...schedule,
+        isoDate: result.date,
+        slot: confirmedSlot,
+        slotStart: result.slot.startTime,
+        slotEnd: result.slot.endTime,
+      };
+      const confirmedAddress: Address = {
+        ...activeAddress,
+        fullAddress: result.address.line,
+        city: result.address.city,
+        landmark: result.address.notes ?? activeAddress.landmark,
+      };
+      const confirmedCustomer: CustomerDetails = {
+        ...customer,
+        fullName: result.customer.name,
+        phone: result.customer.phone,
+        email: result.customer.email ?? customer.email,
+      };
+      const snapshot: BookingSnapshot = {
+        id: result.id,
+        bookingId: result.bookingNumber,
+        status: result.status,
+        items,
+        address: confirmedAddress,
+        schedule: confirmedSchedule,
+        customer: confirmedCustomer,
+        estimatedTotal,
+      };
+
+      addOrder({
+        id: String(result.id),
+        bookingId: result.bookingNumber,
+        serviceTitle: result.service.name,
+        serviceSlug: result.service.slug,
+        serviceImage: service.image,
+        quantity: service.quantity,
+        status: result.status,
+        date: formatBookingDate(result.date),
+        time: confirmedSlot,
+        address: result.address.line,
+        city: result.address.city,
+        subtotal,
+        discount,
+        serviceFee: 0,
+        total: estimatedTotal,
+        timeline: [
+          { label: "Booking Confirmed", completed: true, current: true },
+          { label: "Professional Assigned", completed: false },
+          { label: "Professional On the Way", completed: false },
+          { label: "Service Started", completed: false },
+          { label: "Completed", completed: false },
+        ],
+        createdAt: formatCreatedAt(result.createdAt, result.date),
+      });
+      setBooking(snapshot);
+      setStep(4);
+    } catch (error) {
+      if (
+        error instanceof MahirApiError &&
+        error.code === "mahir_slot_unavailable"
+      ) {
+        setSlots((current) =>
+          current.filter((slot) => slot.startTime !== slotStart),
+        );
+        setSchedule((current) => ({
+          ...current,
+          slot: "",
+          slotStart: undefined,
+          slotEnd: undefined,
+        }));
+        setSlotsError(
+          "This time slot is no longer available. Please choose another time.",
+        );
+        setStep(2);
+      } else {
+        setSubmissionError(
+          "We could not confirm your booking. Please check your details and try again.",
+        );
+      }
+    } finally {
+      submissionInFlight.current = false;
+      setIsSubmitting(false);
+    }
   };
 
   if (!hydrated) {
@@ -354,13 +484,27 @@ export default function BookingPage() {
                 <ScheduleStep
                   schedule={schedule}
                   dates={availableDates}
-                  slots={slots}
+                  slots={slots.map(formatSlotDisplay)}
                   loadingSlots={loadingSlots}
                   slotsError={slotsError}
                   onDateChange={handleDateChange}
-                  onSlotChange={(slot) =>
-                    setSchedule((current) => ({ ...current, slot }))
-                  }
+                  onSlotChange={(slotLabel) => {
+                    const selectedSlot = slots.find(
+                      (slot) => formatSlotDisplay(slot) === slotLabel,
+                    );
+
+                    if (!selectedSlot) {
+                      return;
+                    }
+
+                    setSlotsError(null);
+                    setSchedule((current) => ({
+                      ...current,
+                      slot: slotLabel,
+                      slotStart: selectedSlot.startTime,
+                      slotEnd: selectedSlot.endTime,
+                    }));
+                  }}
                   onBack={() => setStep(1)}
                   onContinue={continueFromSchedule}
                 />
@@ -374,8 +518,13 @@ export default function BookingPage() {
                   subtotal={subtotal}
                   discount={discount}
                   estimatedTotal={estimatedTotal}
-                  onBack={() => setStep(2)}
+                  onBack={() => {
+                    setSubmissionError(null);
+                    setStep(2);
+                  }}
                   onConfirm={confirmBooking}
+                  isSubmitting={isSubmitting}
+                  submissionError={submissionError}
                 />
               ) : null}
               {step === 4 && booking ? (

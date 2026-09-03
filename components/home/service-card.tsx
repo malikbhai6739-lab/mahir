@@ -14,15 +14,16 @@ const toneStyles: Record<ServiceTone, string> = {
 
 type ServiceCardProps = {
   service: Service;
+  categorySlug: string;
   index: number;
 };
 
-export function ServiceCard({ service, index }: ServiceCardProps) {
+export function ServiceCard({ service, categorySlug, index }: ServiceCardProps) {
   return (
     <article className="group min-w-0">
       <Link
-        href="#booking"
-        aria-label={`Start booking ${service.title}`}
+        href={`/services?category=${encodeURIComponent(categorySlug)}`}
+        aria-label={`View ${service.title} services`}
         className="block h-full overflow-hidden rounded-[1.35rem] border border-line bg-white transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-1 hover:border-brand/30 hover:shadow-card"
       >
         <div
