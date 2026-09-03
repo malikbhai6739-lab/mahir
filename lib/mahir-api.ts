@@ -4,6 +4,7 @@ import {
   type DirectoryService,
   type ServicePricing,
 } from "@/data/services";
+import { getAuthToken, clearAuthToken } from "./auth-storage";
 
 const MAHIR_API_URL =
   process.env.MAHIR_API_URL ??
@@ -702,4 +703,176 @@ export async function createBooking(
     },
     createdAt: booking.created_at,
   };
+}
+
+export type RequestOtpResponse = {
+  success: boolean;
+  message: string;
+  data?: {
+    phone: string;
+    expires_in_seconds: number;
+    dev_otp?: string;
+  };
+};
+
+export type AuthCustomer = {
+  id: number;
+  phone: string;
+  full_name: string | null;
+  email: string | null;
+  phone_verified: boolean;
+};
+
+export type VerifyOtpResponse = {
+  success: boolean;
+  message: string;
+  data?: {
+    token: string;
+    expires_in_seconds: number;
+    customer: AuthCustomer;
+  };
+};
+
+export type CurrentCustomerResponse = {
+  success: boolean;
+  data?: {
+    customer: AuthCustomer;
+  };
+};
+
+type WordPressAuthApiErrorResponse = {
+  code?: string;
+  message?: string;
+  data?: {
+    status?: number;
+  };
+};
+
+export async function requestOtp(phone: string): Promise<RequestOtpResponse> {
+  const response = await fetch(`${MAHIR_API_URL}/auth/request-otp`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ phone }),
+  });
+
+  let result: (RequestOtpResponse & WordPressAuthApiErrorResponse) | null = null;
+
+  try {
+    result = (await response.json()) as RequestOtpResponse &
+      WordPressAuthApiErrorResponse;
+  } catch {
+    throw new MahirApiError(
+      `Unable to request OTP (${response.status}).`,
+      response.status,
+    );
+  }
+
+  if (!response.ok || !result.success) {
+    throw new MahirApiError(
+      result?.message || `Unable to request OTP (${response.status}).`,
+      response.status,
+      result?.code,
+    );
+  }
+
+  return result;
+}
+
+export async function verifyOtp(
+  phone: string,
+  otp: string,
+): Promise<VerifyOtpResponse> {
+  const response = await fetch(`${MAHIR_API_URL}/auth/verify-otp`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ phone, otp }),
+  });
+
+  let result: (VerifyOtpResponse & WordPressAuthApiErrorResponse) | null = null;
+
+  try {
+    result = (await response.json()) as VerifyOtpResponse &
+      WordPressAuthApiErrorResponse;
+  } catch {
+    throw new MahirApiError(
+      `Unable to verify OTP (${response.status}).`,
+      response.status,
+    );
+  }
+
+  if (!response.ok || !result.success) {
+    throw new MahirApiError(
+      result?.message || `Unable to verify OTP (${response.status}).`,
+      response.status,
+      result?.code,
+    );
+  }
+
+  return result;
+}
+
+export async function fetchCurrentCustomer(
+  token: string,
+): Promise<CurrentCustomerResponse> {
+  const response = await fetch(`${MAHIR_API_URL}/auth/me`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  let result:
+    | (CurrentCustomerResponse & WordPressAuthApiErrorResponse)
+    | null = null;
+
+  try {
+    result = (await response.json()) as CurrentCustomerResponse &
+      WordPressAuthApiErrorResponse;
+  } catch {
+    throw new MahirApiError(
+      `Unable to fetch customer profile (${response.status}).`,
+      response.status,
+    );
+  }
+
+  if (!response.ok || !result.success) {
+    throw new MahirApiError(
+      result?.message || `Unable to fetch customer profile (${response.status}).`,
+      response.status,
+      result?.code,
+    );
+  }
+
+  return result;
+}
+
+export {
+  MAHIR_AUTH_TOKEN_KEY,
+  getAuthToken,
+  setAuthToken,
+  clearAuthToken,
+} from "./auth-storage";
+
+export async function getCurrentCustomer(): Promise<AuthCustomer | null> {
+  const token = getAuthToken();
+
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const response = await fetchCurrentCustomer(token);
+    return response.data?.customer ?? null;
+  } catch (error) {
+    if (error instanceof MahirApiError && error.status === 401) {
+      // Invalid or expired token from /auth/me must be treated as logged out.
+      clearAuthToken();
+      return null;
+    }
+    throw error;
+  }
 }

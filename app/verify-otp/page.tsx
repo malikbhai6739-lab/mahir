@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { OtpVerificationForm } from "@/components/auth/otp-verification-form";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -11,6 +12,23 @@ type VerifyOtpPageProps = {
 };
 
 export default async function VerifyOtpPage({ searchParams }: VerifyOtpPageProps) {
-  const { phone = "3001234567", next = "/profile" } = await searchParams;
-  return <><SiteHeader /><AuthShell asideTitle="One small step to get things moving." asideText="Use the verification code to continue your Mahir service journey."><OtpVerificationForm phone={phone} nextPath={next} /></AuthShell><SiteFooter /></>;
+  const { phone, next = "/profile" } = await searchParams;
+
+  if (!phone || !phone.trim()) {
+    const nextParam = next && next !== "/profile" ? `?next=${encodeURIComponent(next)}` : "";
+    redirect(`/login${nextParam}`);
+  }
+
+  return (
+    <>
+      <SiteHeader />
+      <AuthShell
+        asideTitle="One small step to get things moving."
+        asideText="Use the verification code to continue your Mahir service journey."
+      >
+        <OtpVerificationForm phone={phone.trim()} nextPath={next} />
+      </AuthShell>
+      <SiteFooter />
+    </>
+  );
 }
