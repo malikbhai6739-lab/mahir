@@ -1406,6 +1406,42 @@ export async function updateCurrentCustomer(
   return result;
 }
 
+export type LogoutResponse = {
+  success: boolean;
+};
+
+export async function logoutCustomer(token: string): Promise<LogoutResponse> {
+  const response = await fetch(`${MAHIR_API_URL}/auth/logout`, {
+    method: "POST",
+    cache: "no-store",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  let result: (LogoutResponse & WordPressAuthApiErrorResponse) | null = null;
+
+  try {
+    result = (await response.json()) as LogoutResponse &
+      WordPressAuthApiErrorResponse;
+  } catch {
+    throw new MahirApiError(
+      `Unable to log out (${response.status}).`,
+      response.status,
+    );
+  }
+
+  if (!response.ok || !result.success) {
+    throw new MahirApiError(
+      result?.message || `Unable to log out (${response.status}).`,
+      response.status,
+      result?.code,
+    );
+  }
+
+  return result;
+}
+
 export {
   MAHIR_AUTH_TOKEN_KEY,
   getAuthToken,
