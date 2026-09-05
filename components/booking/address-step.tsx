@@ -5,6 +5,9 @@ type AddressStepProps = {
   selectedAddressId: string;
   customer: CustomerDetails;
   showNewAddress: boolean;
+  addressesLoading: boolean;
+  addressesError: string | null;
+  onRetryAddresses: () => void;
   onSelectAddress: (id: string) => void;
   onToggleNewAddress: () => void;
   onCustomerChange: (field: keyof CustomerDetails, value: string) => void;
@@ -18,6 +21,9 @@ export function AddressStep({
   selectedAddressId,
   customer,
   showNewAddress,
+  addressesLoading,
+  addressesError,
+  onRetryAddresses,
   onSelectAddress,
   onToggleNewAddress,
   onCustomerChange,
@@ -35,6 +41,35 @@ export function AddressStep({
       </h1>
       <p className="mt-3 text-base leading-7 text-muted">Choose a saved address or add a new service location.</p>
 
+      {addressesLoading ? (
+        <div className="mt-8 rounded-2xl border border-line bg-white p-5 text-sm text-muted">
+          Loading saved addresses...
+        </div>
+      ) : null}
+
+      {addressesError ? (
+        <div
+          role="alert"
+          className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900"
+        >
+          <p>{addressesError}</p>
+          <button
+            type="button"
+            onClick={onRetryAddresses}
+            className="mt-3 font-semibold text-brand hover:text-brand-dark"
+          >
+            Try loading saved addresses again
+          </button>
+        </div>
+      ) : null}
+
+      {!addressesLoading && !addressesError && !addresses.length ? (
+        <p className="mt-8 rounded-2xl border border-line bg-white p-5 text-sm text-muted">
+          You do not have any saved addresses yet. Enter a new service location
+          below.
+        </p>
+      ) : null}
+
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
         {addresses.map((address) => (
           <button
@@ -46,7 +81,13 @@ export function AddressStep({
           >
             <span className="flex items-center justify-between gap-3">
               <span className="font-semibold text-foreground">{address.label}</span>
-              {selectedAddressId === address.id && !showNewAddress ? <span className="text-sm font-bold text-brand">Selected</span> : null}
+              {address.isDefault ? (
+                <span className="rounded-full bg-brand-soft px-2 py-1 text-xs font-bold text-brand">
+                  Default
+                </span>
+              ) : selectedAddressId === address.id && !showNewAddress ? (
+                <span className="text-sm font-bold text-brand">Selected</span>
+              ) : null}
             </span>
             <span className="mt-3 block text-sm leading-6 text-muted">{address.fullAddress}</span>
             <span className="mt-1 block text-sm font-medium text-foreground">{address.city}</span>
@@ -54,9 +95,11 @@ export function AddressStep({
         ))}
       </div>
 
-      <button type="button" onClick={onToggleNewAddress} className={`mt-4 inline-flex min-h-11 items-center rounded-xl border px-4 text-sm font-semibold transition-colors ${showNewAddress ? "border-brand bg-brand-soft text-brand" : "border-line bg-white text-foreground hover:border-brand hover:text-brand"}`}>
-        {showNewAddress ? "Use a Saved Address" : "Add New Address"}
-      </button>
+      {addresses.length ? (
+        <button type="button" onClick={onToggleNewAddress} className={`mt-4 inline-flex min-h-11 items-center rounded-xl border px-4 text-sm font-semibold transition-colors ${showNewAddress ? "border-brand bg-brand-soft text-brand" : "border-line bg-white text-foreground hover:border-brand hover:text-brand"}`}>
+          {showNewAddress ? "Use a Saved Address" : "Add New Address"}
+        </button>
+      ) : null}
 
       {showNewAddress ? (
         <div className="mt-6 rounded-2xl border border-line bg-white p-5 sm:p-6">

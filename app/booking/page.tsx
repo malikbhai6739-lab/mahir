@@ -13,22 +13,16 @@ import { useOrders } from "@/components/orders/order-context";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { mockCustomerProfile } from "@/data/profile";
-import { createBooking, fetchServiceSlots, MahirApiError, type BookingSlot } from "@/lib/mahir-api";
-
-const savedAddresses: Address[] = [
-  {
-    id: "home",
-    label: "Home",
-    fullAddress: "24-B Main Boulevard, Gulberg III",
-    city: "Lahore",
-  },
-  {
-    id: "office",
-    label: "Office",
-    fullAddress: "8th Floor, Blue Area Business Centre",
-    city: "Islamabad",
-  },
-];
+import {
+  clearAuthToken,
+  createBooking,
+  fetchAddresses,
+  fetchServiceSlots,
+  getAuthToken,
+  MahirApiError,
+  type BookingSlot,
+  type MahirAddress,
+} from "@/lib/mahir-api";
 
 const initialCustomer: CustomerDetails = {
   fullName: mockCustomerProfile.fullName,
@@ -39,6 +33,21 @@ const initialCustomer: CustomerDetails = {
   city: "",
   landmark: "",
 };
+
+function mapSavedAddress(address: MahirAddress): Address {
+  const area = address.area?.trim() || "";
+
+  return {
+    id: String(address.id),
+    label: address.label?.trim() || "Saved address",
+    address: address.address_line,
+    area: area || undefined,
+    fullAddress: [address.address_line, area].filter(Boolean).join(", "),
+    city: address.city,
+    landmark: address.notes ?? undefined,
+    isDefault: address.is_default,
+  };
+}
 
 function format24to12(timeStr: string): string {
   const [hStr, mStr] = timeStr.split(":");
@@ -120,8 +129,14 @@ export default function BookingPage() {
   const { items, subtotal, discount, estimatedTotal, hydrated } = useCart();
   const { addOrder } = useOrders();
   const [step, setStep] = useState(1);
-  const [selectedAddressId, setSelectedAddressId] = useState("home");
-  const [showNewAddress, setShowNewAddress] = useState(false);
+  const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
+  const [savedAddressesLoading, setSavedAddressesLoading] = useState(true);
+  const [savedAddressesError, setSavedAddressesError] = useState<string | null>(
+    null,
+  );
+  const [savedAddressesReload, setSavedAddressesReload] = useState(0);
+  const [selectedAddressId, setSelectedAddressId] = useState("");
+  const [showNewAddress, setShowNewAddress] = useState(true);
   const [customer, setCustomer] = useState<CustomerDetails>(initialCustomer);
   const [booking, setBooking] = useState<BookingSnapshot | null>(null);
 
@@ -142,9 +157,11 @@ export default function BookingPage() {
 
   const selectedAddress =
     savedAddresses.find((address) => address.id === selectedAddressId) ??
-    savedAddresses[0];
+    savedAddresses[0] ??
+    null;
+  const usingNewAddress = showNewAddress || !selectedAddress;
 
-  const activeAddress: Address = showNewAddress
+  const activeAddress: Address = usingNewAddress
     ? {
         id: "new-address",
         label: "New address",
@@ -159,6 +176,74 @@ export default function BookingPage() {
     ? activeAddress.city.toLowerCase().trim().replace(/\s+/g, "-")
     : "";
   const selectedIsoDate = schedule.isoDate ?? "";
+
+  useEffect(() => {
+    let isMounted = true;
+    const token = getAuthToken();
+
+    if (!token) {
+      queueMicrotask(() => {
+        if (!isMounted) return;
+
+        setSavedAddresses([]);
+        setSelectedAddressId("");
+        setShowNewAddress(true);
+        setSavedAddressesLoading(false);
+        setSavedAddressesError(null);
+      });
+
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    const loadSavedAddresses = async (authToken: string) => {
+      setSavedAddressesLoading(true);
+      setSavedAddressesError(null);
+
+      try {
+        const response = await fetchAddresses(authToken);
+        if (!isMounted) return;
+
+        const mappedAddresses = response.map(mapSavedAddress);
+        const preferredAddress =
+          mappedAddresses.find((address) => address.isDefault) ??
+          mappedAddresses[0] ??
+          null;
+
+        setSavedAddresses(mappedAddresses);
+        setSelectedAddressId(preferredAddress?.id ?? "");
+        setShowNewAddress(!preferredAddress);
+      } catch (error) {
+        if (!isMounted) return;
+
+        if (error instanceof MahirApiError && error.status === 401) {
+          clearAuthToken();
+          setSavedAddresses([]);
+          setSelectedAddressId("");
+          setShowNewAddress(true);
+          setSavedAddressesError(
+            "Your saved-address session expired. You can continue with a new address.",
+          );
+        } else {
+          setSavedAddressesError(
+            "Saved addresses could not be loaded. Enter a new address or try again.",
+          );
+          setShowNewAddress(true);
+        }
+      } finally {
+        if (isMounted) {
+          setSavedAddressesLoading(false);
+        }
+      }
+    };
+
+    void loadSavedAddresses(token);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [savedAddressesReload]);
 
   useEffect(() => {
     let isMounted = true;
@@ -251,7 +336,7 @@ export default function BookingPage() {
   };
 
   const continueFromAddress = () => {
-    if (!showNewAddress) {
+    if (!usingNewAddress) {
       setCustomer((current) => ({
         ...current,
         address: activeAddress.fullAddress,
@@ -471,11 +556,20 @@ export default function BookingPage() {
                   addresses={savedAddresses}
                   selectedAddressId={selectedAddressId}
                   customer={customer}
-                  showNewAddress={showNewAddress}
-                  onSelectAddress={handleSelectAddress}
-                  onToggleNewAddress={() =>
-                    setShowNewAddress((current) => !current)
+                  showNewAddress={usingNewAddress}
+                  addressesLoading={savedAddressesLoading}
+                  addressesError={savedAddressesError}
+                  onRetryAddresses={() =>
+                    setSavedAddressesReload((count) => count + 1)
                   }
+                  onSelectAddress={handleSelectAddress}
+                  onToggleNewAddress={() => {
+                    if (usingNewAddress && savedAddresses.length) {
+                      setShowNewAddress(false);
+                    } else {
+                      setShowNewAddress(true);
+                    }
+                  }}
                   onCustomerChange={handleCustomerChange}
                   onContinue={continueFromAddress}
                 />

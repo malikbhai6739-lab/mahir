@@ -600,6 +600,267 @@ export class MahirApiError extends Error {
   }
 }
 
+export type MahirAddress = {
+  id: number;
+  label: string | null;
+  address_line: string;
+  area: string | null;
+  city: string;
+  notes: string | null;
+  is_default: boolean;
+};
+
+export type MahirAddressInput = {
+  label?: string | null;
+  address_line: string;
+  area?: string | null;
+  city: string;
+  notes?: string | null;
+  is_default?: boolean;
+};
+
+export type MahirAddressUpdateInput = Partial<MahirAddressInput>;
+
+export type DeletedMahirAddress = {
+  deleted: true;
+  id: number;
+};
+
+type WordPressAddressApiResponse = {
+  success?: boolean;
+  code?: string;
+  message?: string;
+  data?: {
+    addresses?: unknown;
+    address?: unknown;
+    deleted?: unknown;
+    id?: unknown;
+  };
+};
+
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === "string";
+}
+
+function parseMahirAddress(value: unknown): MahirAddress | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const address = value as Partial<MahirAddress>;
+
+  if (
+    typeof address.id !== "number" ||
+    !Number.isInteger(address.id) ||
+    address.id < 1 ||
+    !isNullableString(address.label) ||
+    typeof address.address_line !== "string" ||
+    !address.address_line.trim() ||
+    !isNullableString(address.area) ||
+    typeof address.city !== "string" ||
+    !address.city.trim() ||
+    !isNullableString(address.notes) ||
+    typeof address.is_default !== "boolean"
+  ) {
+    return null;
+  }
+
+  return {
+    id: address.id,
+    label: address.label,
+    address_line: address.address_line,
+    area: address.area,
+    city: address.city,
+    notes: address.notes,
+    is_default: address.is_default,
+  };
+}
+
+async function readAddressApiResponse(
+  response: Response,
+  fallbackMessage: string,
+): Promise<WordPressAddressApiResponse> {
+  let result: WordPressAddressApiResponse | null = null;
+
+  try {
+    result = (await response.json()) as WordPressAddressApiResponse;
+  } catch {
+    throw new MahirApiError(fallbackMessage, response.status);
+  }
+
+  if (!response.ok || !result?.success) {
+    throw new MahirApiError(
+      result?.message || fallbackMessage,
+      response.status,
+      result?.code,
+    );
+  }
+
+  return result;
+}
+
+function buildAddressCreatePayload(input: MahirAddressInput) {
+  return {
+    label: input.label?.trim() || null,
+    address_line: input.address_line.trim(),
+    area: input.area?.trim() || null,
+    city: input.city.trim(),
+    notes: input.notes?.trim() || null,
+    is_default: Boolean(input.is_default),
+  };
+}
+
+function buildAddressUpdatePayload(input: MahirAddressUpdateInput) {
+  const payload: MahirAddressUpdateInput = {};
+
+  if ("label" in input) {
+    payload.label = input.label?.trim() || null;
+  }
+  if ("address_line" in input) {
+    payload.address_line = input.address_line?.trim();
+  }
+  if ("area" in input) {
+    payload.area = input.area?.trim() || null;
+  }
+  if ("city" in input) {
+    payload.city = input.city?.trim();
+  }
+  if ("notes" in input) {
+    payload.notes = input.notes?.trim() || null;
+  }
+  if ("is_default" in input) {
+    payload.is_default = Boolean(input.is_default);
+  }
+
+  return payload;
+}
+
+export async function fetchAddresses(token: string): Promise<MahirAddress[]> {
+  const response = await fetch(MAHIR_API_URL + "/addresses", {
+    method: "GET",
+    cache: "no-store",
+    headers: {
+      Authorization: "Bearer " + token,
+    },
+  });
+
+  const result = await readAddressApiResponse(
+    response,
+    "Unable to fetch saved addresses (" + response.status + ").",
+  );
+  const rawAddresses = result.data?.addresses;
+
+  if (!Array.isArray(rawAddresses)) {
+    throw new MahirApiError(
+      "Invalid saved-address data received from API.",
+      response.status,
+    );
+  }
+
+  const addresses = rawAddresses.map(parseMahirAddress);
+
+  if (addresses.some((address) => address === null)) {
+    throw new MahirApiError(
+      "Invalid saved-address data received from API.",
+      response.status,
+    );
+  }
+
+  return addresses as MahirAddress[];
+}
+
+export async function createAddress(
+  token: string,
+  input: MahirAddressInput,
+): Promise<MahirAddress> {
+  const response = await fetch(MAHIR_API_URL + "/addresses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token,
+    },
+    body: JSON.stringify(buildAddressCreatePayload(input)),
+  });
+
+  const result = await readAddressApiResponse(
+    response,
+    "Unable to create saved address (" + response.status + ").",
+  );
+  const address = parseMahirAddress(result.data?.address);
+
+  if (!address) {
+    throw new MahirApiError(
+      "Invalid saved-address data received from API.",
+      response.status,
+    );
+  }
+
+  return address;
+}
+
+export async function updateAddress(
+  token: string,
+  id: number,
+  input: MahirAddressUpdateInput,
+): Promise<MahirAddress> {
+  const response = await fetch(MAHIR_API_URL + "/addresses/" + id, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer " + token,
+    },
+    body: JSON.stringify(buildAddressUpdatePayload(input)),
+  });
+
+  const result = await readAddressApiResponse(
+    response,
+    "Unable to update saved address (" + response.status + ").",
+  );
+  const address = parseMahirAddress(result.data?.address);
+
+  if (!address) {
+    throw new MahirApiError(
+      "Invalid saved-address data received from API.",
+      response.status,
+    );
+  }
+
+  return address;
+}
+
+export async function deleteAddress(
+  token: string,
+  id: number,
+): Promise<DeletedMahirAddress> {
+  const response = await fetch(MAHIR_API_URL + "/addresses/" + id, {
+    method: "DELETE",
+    headers: {
+      Authorization: "Bearer " + token,
+    },
+  });
+
+  const result = await readAddressApiResponse(
+    response,
+    "Unable to delete saved address (" + response.status + ").",
+  );
+
+  if (
+    result.data?.deleted !== true ||
+    typeof result.data.id !== "number" ||
+    result.data.id !== id
+  ) {
+    throw new MahirApiError(
+      "Invalid saved-address deletion response.",
+      response.status,
+    );
+  }
+
+  return {
+    deleted: true,
+    id: result.data.id,
+  };
+}
+
 export async function createBooking(
   input: CreateBookingInput,
 ): Promise<CreatedBooking> {
