@@ -9,6 +9,7 @@ import { PersonalInfoForm } from "@/components/profile/personal-info-form";
 import { ProfileSummary } from "@/components/profile/profile-summary";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { isRecentOrderStatus, isUpcomingOrderStatus } from "@/data/orders";
 import type { CustomerProfile } from "@/data/profile";
 import {
   clearAuthToken,
@@ -19,6 +20,65 @@ import {
   type AuthCustomer,
   type MahirOrder,
 } from "@/lib/mahir-api";
+
+function parseOrderDateTime(order: MahirOrder): number | null {
+  try {
+    const dateStr = order.date?.trim();
+    if (!dateStr) return null;
+
+    const startTime = order.slot?.start_time?.trim() || "00:00:00";
+    const formattedStartTime =
+      startTime.length === 5 ? `${startTime}:00` : startTime;
+    const isoString = `${dateStr}T${formattedStartTime}`;
+    const timestamp = Date.parse(isoString);
+    if (!Number.isNaN(timestamp)) {
+      return timestamp;
+    }
+
+    const fallback = Date.parse(dateStr);
+    if (!Number.isNaN(fallback)) {
+      return fallback;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function selectUpcomingOrder(activeOrders: MahirOrder[]): MahirOrder | null {
+  if (!activeOrders.length) return null;
+  if (activeOrders.length === 1) return activeOrders[0];
+
+  try {
+    const now = Date.now();
+    const sorted = [...activeOrders].sort((a, b) => {
+      const timeA = parseOrderDateTime(a);
+      const timeB = parseOrderDateTime(b);
+
+      if (timeA !== null && timeB !== null) {
+        const isFutureA = timeA >= now;
+        const isFutureB = timeB >= now;
+
+        if (isFutureA && !isFutureB) return -1;
+        if (!isFutureA && isFutureB) return 1;
+
+        if (isFutureA && isFutureB) return timeA - timeB;
+
+        return timeB - timeA;
+      }
+
+      if (timeA !== null) return -1;
+      if (timeB !== null) return 1;
+
+      return 0;
+    });
+
+    return sorted[0];
+  } catch {
+    return activeOrders[0];
+  }
+}
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -95,11 +155,15 @@ export default function ProfilePage() {
     setReloadTrigger((count) => count + 1);
   };
 
-  const upcomingOrder = orders.find(
-    (order) => order.status !== "completed" && order.status !== "cancelled"
+  const allOrders = orders;
+
+  const upcomingOrders = allOrders.filter((order) =>
+    isUpcomingOrderStatus(order.status)
   );
-  const recentOrders = orders
-    .filter((order) => order.status === "completed" || order.status === "cancelled")
+  const upcomingOrder = selectUpcomingOrder(upcomingOrders);
+
+  const recentOrders = allOrders
+    .filter((order) => isRecentOrderStatus(order.status))
     .slice(0, 3);
 
   if (loading) {

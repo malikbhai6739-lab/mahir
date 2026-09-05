@@ -1,16 +1,32 @@
 export type OrderTab = "upcoming" | "completed" | "cancelled";
 
+export function normalizeOrderStatus(status: string): string {
+  return typeof status === "string" ? status.trim().toLowerCase() : "";
+}
+
 export function getOrderTab(status: string): OrderTab {
-  if (status === "completed") return "completed";
-  if (status === "cancelled") return "cancelled";
+  const normalized = normalizeOrderStatus(status);
+  if (normalized === "completed") return "completed";
+  if (normalized === "cancelled") return "cancelled";
   return "upcoming";
 }
 
+export function isUpcomingOrderStatus(status: string): boolean {
+  const normalized = normalizeOrderStatus(status);
+  return normalized !== "completed" && normalized !== "cancelled";
+}
+
+export function isRecentOrderStatus(status: string): boolean {
+  const normalized = normalizeOrderStatus(status);
+  return normalized === "completed" || normalized === "cancelled";
+}
+
 export function getOrderStatusLabel(status: string) {
-  if (status === "confirmed") return "Confirmed";
-  if (status === "completed") return "Completed";
-  if (status === "cancelled") return "Cancelled";
-  return status
+  const normalized = normalizeOrderStatus(status);
+  if (normalized === "confirmed") return "Confirmed";
+  if (normalized === "completed") return "Completed";
+  if (normalized === "cancelled") return "Cancelled";
+  return normalized
     .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
