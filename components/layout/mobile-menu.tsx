@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { NavigationItem } from "@/data/homepage";
+import { HeaderAuthLink } from "@/components/layout/header-auth-link";
 
 type MobileMenuProps = {
   items: NavigationItem[];
@@ -83,17 +84,25 @@ export function MobileMenu({ items }: MobileMenuProps) {
                   key={item.label}
                   className={index === 6 ? "mt-2 border-t border-line pt-2" : ""}
                 >
-                  <Link
-                    ref={index === 0 ? firstLinkRef : undefined}
-                    href={item.href}
-                    onClick={() => setIsOpen(false)}
-                    className="flex min-h-12 items-center justify-between rounded-xl px-4 font-medium text-foreground transition-colors hover:bg-brand-soft hover:text-brand"
-                  >
-                    {item.label}
-                    <span aria-hidden="true" className="text-brand">
-                      →
-                    </span>
-                  </Link>
+                  {item.href === "/login" ? (
+                    <HeaderAuthLink
+                      onNavigate={() => setIsOpen(false)}
+                      showArrow
+                      className="flex min-h-12 items-center justify-between rounded-xl px-4 font-medium text-foreground transition-colors hover:bg-brand-soft hover:text-brand"
+                    />
+                  ) : (
+                    <Link
+                      ref={index === 0 ? firstLinkRef : undefined}
+                      href={item.href}
+                      onClick={() => setIsOpen(false)}
+                      className="flex min-h-12 items-center justify-between rounded-xl px-4 font-medium text-foreground transition-colors hover:bg-brand-soft hover:text-brand"
+                    >
+                      {item.label}
+                      <span aria-hidden="true" className="text-brand">
+                        →
+                      </span>
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>

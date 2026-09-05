@@ -5,6 +5,11 @@
  * and should later be upgraded if the auth architecture changes (e.g. to HTTP-only secure cookies).
  */
 export const MAHIR_AUTH_TOKEN_KEY = "mahir_auth_token";
+const MAHIR_AUTH_STATE_EVENT = "mahir-auth-state-change";
+
+function notifyAuthStateChange(): void {
+  window.dispatchEvent(new Event(MAHIR_AUTH_STATE_EVENT));
+}
 
 /**
  * Retrieve the current stored auth bearer token.
@@ -33,6 +38,7 @@ export function setAuthToken(token: string): void {
 
   try {
     window.localStorage.setItem(MAHIR_AUTH_TOKEN_KEY, token);
+    notifyAuthStateChange();
   } catch {
     // Gracefully handle storage quota or disabled storage.
   }
@@ -48,8 +54,31 @@ export function clearAuthToken(): void {
 
   try {
     window.localStorage.removeItem(MAHIR_AUTH_TOKEN_KEY);
+    notifyAuthStateChange();
   } catch {
     // Gracefully handle storage errors.
   }
 }
 
+/**
+ * Subscribe to auth-token presence changes without exposing the token value.
+ */
+export function subscribeAuthState(onChange: () => void): () => void {
+  if (typeof window === "undefined") {
+    return () => undefined;
+  }
+
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key === MAHIR_AUTH_TOKEN_KEY || event.key === null) {
+      onChange();
+    }
+  };
+
+  window.addEventListener("storage", handleStorage);
+  window.addEventListener(MAHIR_AUTH_STATE_EVENT, onChange);
+
+  return () => {
+    window.removeEventListener("storage", handleStorage);
+    window.removeEventListener(MAHIR_AUTH_STATE_EVENT, onChange);
+  };
+}
