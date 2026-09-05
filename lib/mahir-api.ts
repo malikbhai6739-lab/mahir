@@ -1061,6 +1061,37 @@ export async function fetchOrder(
   return order;
 }
 
+export async function cancelOrder(
+  token: string,
+  id: number | string,
+): Promise<MahirOrder> {
+  const orderId = typeof id === "number" ? id : Number(id);
+
+  if (!Number.isInteger(orderId) || orderId < 1) {
+    throw new MahirApiError("Order was not found.", 404, "mahir_order_not_found");
+  }
+
+  const response = await fetch(`${MAHIR_API_URL}/orders/${orderId}/cancel`, {
+    method: "PATCH",
+    cache: "no-store",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const result = await readOrdersApiResponse(
+    response,
+    `Unable to cancel order (${response.status}).`,
+  );
+  const order = parseMahirOrder(result.data?.order);
+
+  if (!order) {
+    throw new MahirApiError("Invalid order data received from API.", response.status);
+  }
+
+  return order;
+}
+
 export async function createBooking(
   token: string,
   input: CreateBookingInput,

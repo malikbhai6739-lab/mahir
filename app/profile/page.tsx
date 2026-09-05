@@ -98,7 +98,9 @@ export default function ProfilePage() {
   const upcomingOrder = orders.find(
     (order) => order.status !== "completed" && order.status !== "cancelled"
   );
-  const recentOrders = orders.slice(0, 3);
+  const recentOrders = orders
+    .filter((order) => order.status === "completed" || order.status === "cancelled")
+    .slice(0, 3);
 
   if (loading) {
     return (

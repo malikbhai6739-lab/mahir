@@ -157,7 +157,12 @@ export function OrderDetailRoute({ orderId }: { orderId: string }) {
   return (
     <>
       <SiteHeader />
-      <OrderDetail order={order} />
+      <OrderDetail
+        order={order}
+        onOrderUpdated={(updated) => setOrder(updated)}
+        onRefresh={() => setReloadTrigger((count) => count + 1)}
+        onNotFound={() => setNotFound(true)}
+      />
       <SiteFooter />
     </>
   );
