@@ -861,7 +861,208 @@ export async function deleteAddress(
   };
 }
 
+export type MahirOrder = {
+  id: number;
+  order_number: string;
+  status: string;
+  service: {
+    id: number;
+    slug: string;
+    name: string;
+  };
+  date: string;
+  time: string;
+  slot: {
+    start_time: string;
+    end_time: string;
+  };
+  city: string;
+  service_city: {
+    id: number;
+    slug: string;
+    name: string;
+  };
+  address: string;
+  notes: string | null;
+  total: number | null;
+  currency: string;
+  pricing: {
+    type: string | null;
+    starting_price: number | null;
+    quoted_price: number | null;
+  };
+  created_at: string;
+  updated_at: string;
+};
+
+type WordPressOrdersApiResponse = {
+  success?: boolean;
+  code?: string;
+  message?: string;
+  data?: {
+    orders?: unknown;
+    order?: unknown;
+  };
+};
+
+function isNullablePrice(value: unknown): value is number | null {
+  return (
+    value === null ||
+    (typeof value === "number" && Number.isFinite(value) && value >= 0)
+  );
+}
+
+function isOrderReference(
+  value: unknown,
+): value is { id: number; slug: string; name: string } {
+  if (!value || typeof value !== "object") return false;
+
+  const reference = value as Record<string, unknown>;
+
+  return (
+    typeof reference.id === "number" &&
+    Number.isInteger(reference.id) &&
+    reference.id > 0 &&
+    typeof reference.slug === "string" &&
+    Boolean(reference.slug.trim()) &&
+    typeof reference.name === "string" &&
+    Boolean(reference.name.trim())
+  );
+}
+
+function parseMahirOrder(value: unknown): MahirOrder | null {
+  if (!value || typeof value !== "object") return null;
+
+  const order = value as Record<string, unknown>;
+  const slot = order.slot as Record<string, unknown> | null;
+  const pricing = order.pricing as Record<string, unknown> | null;
+
+  if (
+    typeof order.id !== "number" ||
+    !Number.isInteger(order.id) ||
+    order.id < 1 ||
+    typeof order.order_number !== "string" ||
+    !order.order_number.trim() ||
+    typeof order.status !== "string" ||
+    !order.status.trim() ||
+    !isOrderReference(order.service) ||
+    typeof order.date !== "string" ||
+    !order.date.trim() ||
+    typeof order.time !== "string" ||
+    !order.time.trim() ||
+    !slot ||
+    typeof slot.start_time !== "string" ||
+    !slot.start_time.trim() ||
+    typeof slot.end_time !== "string" ||
+    !slot.end_time.trim() ||
+    typeof order.city !== "string" ||
+    !order.city.trim() ||
+    !isOrderReference(order.service_city) ||
+    typeof order.address !== "string" ||
+    !order.address.trim() ||
+    (order.notes !== null && typeof order.notes !== "string") ||
+    !isNullablePrice(order.total) ||
+    typeof order.currency !== "string" ||
+    !order.currency.trim() ||
+    !pricing ||
+    (pricing.type !== null && typeof pricing.type !== "string") ||
+    !isNullablePrice(pricing.starting_price) ||
+    !isNullablePrice(pricing.quoted_price) ||
+    typeof order.created_at !== "string" ||
+    !order.created_at.trim() ||
+    typeof order.updated_at !== "string" ||
+    !order.updated_at.trim()
+  ) {
+    return null;
+  }
+
+  return order as MahirOrder;
+}
+
+async function readOrdersApiResponse(
+  response: Response,
+  fallbackMessage: string,
+): Promise<WordPressOrdersApiResponse> {
+  let result: WordPressOrdersApiResponse | null = null;
+
+  try {
+    result = (await response.json()) as WordPressOrdersApiResponse;
+  } catch {
+    throw new MahirApiError(fallbackMessage, response.status);
+  }
+
+  if (!response.ok || !result?.success) {
+    throw new MahirApiError(
+      result?.message || fallbackMessage,
+      response.status,
+      result?.code,
+    );
+  }
+
+  return result;
+}
+
+export async function fetchOrders(token: string): Promise<MahirOrder[]> {
+  const response = await fetch(`${MAHIR_API_URL}/orders`, {
+    method: "GET",
+    cache: "no-store",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const result = await readOrdersApiResponse(
+    response,
+    `Unable to fetch orders (${response.status}).`,
+  );
+  const rawOrders = result.data?.orders;
+
+  if (!Array.isArray(rawOrders)) {
+    throw new MahirApiError("Invalid orders data received from API.", response.status);
+  }
+
+  const orders = rawOrders.map(parseMahirOrder);
+
+  if (orders.some((order) => order === null)) {
+    throw new MahirApiError("Invalid orders data received from API.", response.status);
+  }
+
+  return orders as MahirOrder[];
+}
+
+export async function fetchOrder(
+  token: string,
+  id: number | string,
+): Promise<MahirOrder> {
+  const orderId = typeof id === "number" ? id : Number(id);
+
+  if (!Number.isInteger(orderId) || orderId < 1) {
+    throw new MahirApiError("Order was not found.", 404, "mahir_order_not_found");
+  }
+
+  const response = await fetch(`${MAHIR_API_URL}/orders/${orderId}`, {
+    method: "GET",
+    cache: "no-store",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const result = await readOrdersApiResponse(
+    response,
+    `Unable to fetch order (${response.status}).`,
+  );
+  const order = parseMahirOrder(result.data?.order);
+
+  if (!order) {
+    throw new MahirApiError("Invalid order data received from API.", response.status);
+  }
+
+  return order;
+}
+
 export async function createBooking(
+  token: string,
   input: CreateBookingInput,
 ): Promise<CreatedBooking> {
   const customer = {
@@ -879,6 +1080,7 @@ export async function createBooking(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
       service: input.service,

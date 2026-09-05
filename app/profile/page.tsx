@@ -9,15 +9,23 @@ import { PersonalInfoForm } from "@/components/profile/personal-info-form";
 import { ProfileSummary } from "@/components/profile/profile-summary";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
-import { mockOrders } from "@/data/orders";
 import type { CustomerProfile } from "@/data/profile";
-import { getCurrentCustomer, type AuthCustomer } from "@/lib/mahir-api";
+import {
+  clearAuthToken,
+  fetchCurrentCustomer,
+  fetchOrders,
+  getAuthToken,
+  MahirApiError,
+  type AuthCustomer,
+  type MahirOrder,
+} from "@/lib/mahir-api";
 
 export default function ProfilePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [customer, setCustomer] = useState<AuthCustomer | null>(null);
+  const [orders, setOrders] = useState<MahirOrder[]>([]);
   const [reloadTrigger, setReloadTrigger] = useState(0);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
@@ -31,27 +39,41 @@ export default function ProfilePage() {
     : null;
 
   useEffect(() => {
+    const token = getAuthToken();
+
+    if (!token) {
+      router.replace("/login?next=/profile");
+      return;
+    }
+
     let active = true;
 
-    async function checkAuth() {
+    async function loadAccount(authToken: string) {
       try {
-        const current = await getCurrentCustomer();
+        const [customerResponse, customerOrders] = await Promise.all([
+          fetchCurrentCustomer(authToken),
+          fetchOrders(authToken),
+        ]);
         if (!active) return;
 
+        const current = customerResponse.data?.customer;
         if (!current) {
-          // Unauthenticated or expired session (401 handled by helper)
+          throw new Error("Customer profile was missing from the API response.");
+        }
+
+        setCustomer(current);
+        setOrders(customerOrders);
+      } catch (err) {
+        if (!active) return;
+
+        if (err instanceof MahirApiError && err.status === 401) {
+          clearAuthToken();
           router.replace("/login?next=/profile");
           return;
         }
 
-        setCustomer(current);
-      } catch (err) {
-        if (!active) return;
-        // Network or 5xx server error: do not silently clear token or log out
         setError(
-          err instanceof Error
-            ? err.message
-            : "Unable to load your profile. Please check your internet connection."
+          "Unable to load your account. Please check your connection and try again.",
         );
       } finally {
         if (active) {
@@ -60,7 +82,7 @@ export default function ProfilePage() {
       }
     }
 
-    checkAuth();
+    void loadAccount(token);
 
     return () => {
       active = false;
@@ -73,12 +95,10 @@ export default function ProfilePage() {
     setReloadTrigger((count) => count + 1);
   };
 
-  const upcomingOrder = mockOrders.find(
+  const upcomingOrder = orders.find(
     (order) => order.status !== "completed" && order.status !== "cancelled"
   );
-  const recentOrders = mockOrders
-    .filter((order) => order.status === "completed")
-    .slice(0, 3);
+  const recentOrders = orders.slice(0, 3);
 
   if (loading) {
     return (
@@ -128,7 +148,7 @@ export default function ProfilePage() {
                 </svg>
               </div>
               <h2 className="mt-4 text-xl font-bold text-foreground">
-                Unable to load profile
+                Unable to load account
               </h2>
               <p className="mt-2 text-sm leading-6 text-muted">{error}</p>
               <button

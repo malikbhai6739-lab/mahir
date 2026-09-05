@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AddressStep } from "@/components/booking/address-step";
 import { BookingProgress } from "@/components/booking/booking-progress";
@@ -9,7 +10,6 @@ import { ReviewStep } from "@/components/booking/review-step";
 import { ScheduleStep } from "@/components/booking/schedule-step";
 import type { Address, BookingSnapshot, CustomerDetails, Schedule } from "@/components/booking/types";
 import { useCart } from "@/components/cart/cart-context";
-import { useOrders } from "@/components/orders/order-context";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { mockCustomerProfile } from "@/data/profile";
@@ -62,31 +62,6 @@ function formatSlotDisplay(slot: BookingSlot): string {
   return `${format24to12(slot.startTime)} - ${format24to12(slot.endTime)}`;
 }
 
-function formatBookingDate(isoDate: string): string {
-  const [year, month, day] = isoDate.split("-").map(Number);
-  const date = new Date(year, month - 1, day);
-
-  return date.toLocaleDateString("en-PK", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function formatCreatedAt(createdAt: string, fallbackDate: string): string {
-  const date = new Date(createdAt);
-
-  if (Number.isNaN(date.getTime())) {
-    return formatBookingDate(fallbackDate);
-  }
-
-  return date.toLocaleDateString("en-PK", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
 function getAvailableBookingDates(): Schedule[] {
   const dates: Schedule[] = [];
   const today = new Date();
@@ -126,8 +101,8 @@ function getAvailableBookingDates(): Schedule[] {
 }
 
 export default function BookingPage() {
+  const router = useRouter();
   const { items, subtotal, discount, estimatedTotal, hydrated } = useCart();
-  const { addOrder } = useOrders();
   const [step, setStep] = useState(1);
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
   const [savedAddressesLoading, setSavedAddressesLoading] = useState(true);
@@ -182,15 +157,7 @@ export default function BookingPage() {
     const token = getAuthToken();
 
     if (!token) {
-      queueMicrotask(() => {
-        if (!isMounted) return;
-
-        setSavedAddresses([]);
-        setSelectedAddressId("");
-        setShowNewAddress(true);
-        setSavedAddressesLoading(false);
-        setSavedAddressesError(null);
-      });
+      router.replace("/login?next=/booking");
 
       return () => {
         isMounted = false;
@@ -219,12 +186,7 @@ export default function BookingPage() {
 
         if (error instanceof MahirApiError && error.status === 401) {
           clearAuthToken();
-          setSavedAddresses([]);
-          setSelectedAddressId("");
-          setShowNewAddress(true);
-          setSavedAddressesError(
-            "Your saved-address session expired. You can continue with a new address.",
-          );
+          router.replace("/login?next=/booking");
         } else {
           setSavedAddressesError(
             "Saved addresses could not be loaded. Enter a new address or try again.",
@@ -243,7 +205,7 @@ export default function BookingPage() {
     return () => {
       isMounted = false;
     };
-  }, [savedAddressesReload]);
+  }, [router, savedAddressesReload]);
 
   useEffect(() => {
     let isMounted = true;
@@ -356,6 +318,12 @@ export default function BookingPage() {
       return;
     }
 
+    const token = getAuthToken();
+    if (!token) {
+      router.replace("/login?next=/booking");
+      return;
+    }
+
     const service = items[0];
     const slotStart = schedule.slotStart;
 
@@ -371,7 +339,7 @@ export default function BookingPage() {
     setSubmissionError(null);
 
     try {
-      const result = await createBooking({
+      const result = await createBooking(token, {
         service: service.slug,
         city: citySlug,
         date: selectedIsoDate,
@@ -425,35 +393,13 @@ export default function BookingPage() {
         estimatedTotal,
       };
 
-      addOrder({
-        id: String(result.id),
-        bookingId: result.bookingNumber,
-        serviceTitle: result.service.name,
-        serviceSlug: result.service.slug,
-        serviceImage: service.image,
-        quantity: service.quantity,
-        status: result.status,
-        date: formatBookingDate(result.date),
-        time: confirmedSlot,
-        address: result.address.line,
-        city: result.address.city,
-        subtotal,
-        discount,
-        serviceFee: 0,
-        total: estimatedTotal,
-        timeline: [
-          { label: "Booking Confirmed", completed: true, current: true },
-          { label: "Professional Assigned", completed: false },
-          { label: "Professional On the Way", completed: false },
-          { label: "Service Started", completed: false },
-          { label: "Completed", completed: false },
-        ],
-        createdAt: formatCreatedAt(result.createdAt, result.date),
-      });
       setBooking(snapshot);
       setStep(4);
     } catch (error) {
-      if (
+      if (error instanceof MahirApiError && error.status === 401) {
+        clearAuthToken();
+        router.replace("/login?next=/booking");
+      } else if (
         error instanceof MahirApiError &&
         error.code === "mahir_slot_unavailable"
       ) {

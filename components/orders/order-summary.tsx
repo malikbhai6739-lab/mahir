@@ -1,7 +1,59 @@
-import type { Order } from "@/data/orders";
+import type { MahirOrder } from "@/lib/mahir-api";
 
 const priceFormatter = new Intl.NumberFormat("en-PK");
 
-export function OrderSummary({ order }: { order: Order }) {
-  return <section className="rounded-2xl border border-line bg-white p-5 shadow-card" aria-labelledby="order-summary-heading"><h2 id="order-summary-heading" className="text-xl font-bold text-foreground">Order Summary</h2><div className="mt-5 space-y-4">{<div className="flex items-center justify-between gap-4"><div><p className="font-semibold text-foreground">{order.serviceTitle}</p><p className="mt-1 text-sm text-muted">Quantity: {order.quantity}</p></div><p className="font-semibold text-foreground">PKR {priceFormatter.format(order.subtotal)}</p></div>}<dl className="space-y-3 border-t border-line pt-4 text-sm text-muted"><div className="flex justify-between gap-4"><dt>Subtotal</dt><dd className="font-medium text-foreground">PKR {priceFormatter.format(order.subtotal)}</dd></div><div className="flex justify-between gap-4"><dt>Discount</dt><dd className="font-medium text-success">- PKR {priceFormatter.format(order.discount)}</dd></div><div className="flex justify-between gap-4"><dt>Service fee</dt><dd className="font-medium text-foreground">PKR {priceFormatter.format(order.serviceFee)}</dd></div><div className="flex justify-between gap-4 border-t border-line pt-3 text-base font-bold text-foreground"><dt>Total</dt><dd>PKR {priceFormatter.format(order.total)}</dd></div></dl></div></section>;
+function formatPrice(price: number, currency: string) {
+  return `${currency} ${priceFormatter.format(price)}`;
+}
+
+export function OrderSummary({ order }: { order: MahirOrder }) {
+  const hasPricing =
+    order.pricing.starting_price !== null ||
+    order.pricing.quoted_price !== null ||
+    order.total !== null;
+
+  return (
+    <section
+      className="rounded-2xl border border-line bg-white p-5 shadow-card"
+      aria-labelledby="order-summary-heading"
+    >
+      <h2
+        id="order-summary-heading"
+        className="text-xl font-bold text-foreground"
+      >
+        Order Summary
+      </h2>
+      <p className="mt-5 font-semibold text-foreground">
+        {order.service.name}
+      </p>
+      {hasPricing ? (
+        <dl className="mt-4 space-y-3 border-t border-line pt-4 text-sm text-muted">
+          {order.pricing.starting_price !== null ? (
+            <div className="flex justify-between gap-4">
+              <dt>Starting price</dt>
+              <dd className="font-medium text-foreground">
+                {formatPrice(order.pricing.starting_price, order.currency)}
+              </dd>
+            </div>
+          ) : null}
+          {order.pricing.quoted_price !== null ? (
+            <div className="flex justify-between gap-4">
+              <dt>Quoted price</dt>
+              <dd className="font-medium text-foreground">
+                {formatPrice(order.pricing.quoted_price, order.currency)}
+              </dd>
+            </div>
+          ) : null}
+          {order.total !== null ? (
+            <div className="flex justify-between gap-4 border-t border-line pt-3 text-base font-bold text-foreground">
+              <dt>Total</dt>
+              <dd>{formatPrice(order.total, order.currency)}</dd>
+            </div>
+          ) : null}
+        </dl>
+      ) : (
+        <p className="mt-3 text-sm text-muted">Price to be confirmed.</p>
+      )}
+    </section>
+  );
 }
