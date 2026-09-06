@@ -17,7 +17,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       <SiteHeader />
       <AuthShell
         asideTitle="Trusted help, whenever home needs it."
-        asideText="Sign in with your email or mobile number to keep your service journey simple and connected."
+        asideText="Sign in with your Google account or email to keep your service journey simple and connected."
       >
         <LoginForm nextPath={next} initialMethod={method} />
       </AuthShell>

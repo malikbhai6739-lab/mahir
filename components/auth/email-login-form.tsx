@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
@@ -8,11 +8,9 @@ import { requestEmailCode, sanitizeNextPath, MahirApiError } from "@/lib/mahir-a
 export function EmailLoginForm({
   nextPath,
   onBack,
-  onSwitchToPhone,
 }: {
   nextPath: string;
   onBack?: () => void;
-  onSwitchToPhone?: () => void;
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -122,17 +120,6 @@ export function EmailLoginForm({
           {loading ? "Sending code..." : "Continue"}
         </button>
       </form>
-      {onSwitchToPhone ? (
-        <div className="mt-6 text-center">
-          <button
-            type="button"
-            onClick={onSwitchToPhone}
-            className="text-sm font-semibold text-brand hover:text-brand-dark"
-          >
-            Continue with phone instead
-          </button>
-        </div>
-      ) : null}
       <p className="mt-6 text-center text-xs leading-5 text-muted">
         By continuing, you agree to our{" "}
         <Link href="/#footer" className="font-semibold text-brand hover:text-brand-dark">

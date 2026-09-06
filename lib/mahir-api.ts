@@ -1199,16 +1199,6 @@ export async function createBooking(
   };
 }
 
-export type RequestOtpResponse = {
-  success: boolean;
-  message: string;
-  data?: {
-    phone: string;
-    expires_in_seconds: number;
-    dev_otp?: string;
-  };
-};
-
 export type AuthCustomer = {
   id: number;
   phone: string | null;
@@ -1248,16 +1238,6 @@ export type VerifyGoogleAuthResponse = {
   };
 };
 
-export type VerifyOtpResponse = {
-  success: boolean;
-  message: string;
-  data?: {
-    token: string;
-    expires_in_seconds: number;
-    customer: AuthCustomer;
-  };
-};
-
 export type CurrentCustomerResponse = {
   success: boolean;
   data?: {
@@ -1272,73 +1252,6 @@ type WordPressAuthApiErrorResponse = {
     status?: number;
   };
 };
-
-export async function requestOtp(phone: string): Promise<RequestOtpResponse> {
-  const response = await fetch(`${MAHIR_API_URL}/auth/request-otp`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ phone }),
-  });
-
-  let result: (RequestOtpResponse & WordPressAuthApiErrorResponse) | null = null;
-
-  try {
-    result = (await response.json()) as RequestOtpResponse &
-      WordPressAuthApiErrorResponse;
-  } catch {
-    throw new MahirApiError(
-      `Unable to request OTP (${response.status}).`,
-      response.status,
-    );
-  }
-
-  if (!response.ok || !result.success) {
-    throw new MahirApiError(
-      result?.message || `Unable to request OTP (${response.status}).`,
-      response.status,
-      result?.code,
-    );
-  }
-
-  return result;
-}
-
-export async function verifyOtp(
-  phone: string,
-  otp: string,
-): Promise<VerifyOtpResponse> {
-  const response = await fetch(`${MAHIR_API_URL}/auth/verify-otp`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ phone, otp }),
-  });
-
-  let result: (VerifyOtpResponse & WordPressAuthApiErrorResponse) | null = null;
-
-  try {
-    result = (await response.json()) as VerifyOtpResponse &
-      WordPressAuthApiErrorResponse;
-  } catch {
-    throw new MahirApiError(
-      `Unable to verify OTP (${response.status}).`,
-      response.status,
-    );
-  }
-
-  if (!response.ok || !result.success) {
-    throw new MahirApiError(
-      result?.message || `Unable to verify OTP (${response.status}).`,
-      response.status,
-      result?.code,
-    );
-  }
-
-  return result;
-}
 
 export async function requestEmailCode(
   email: string,

@@ -3,10 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import { EmailLoginForm } from "./email-login-form";
-import { PhoneLoginForm } from "./phone-login-form";
 import { GoogleSignInButton } from "./google-sign-in-button";
 
-export type LoginMode = "choice" | "email" | "phone";
+export type LoginMode = "choice" | "email";
 
 export function LoginForm({
   nextPath,
@@ -17,7 +16,6 @@ export function LoginForm({
 }) {
   const [mode, setMode] = useState<LoginMode>(() => {
     if (initialMethod === "email") return "email";
-    if (initialMethod === "phone") return "phone";
     return "choice";
   });
 
@@ -26,17 +24,6 @@ export function LoginForm({
       <EmailLoginForm
         nextPath={nextPath}
         onBack={() => setMode("choice")}
-        onSwitchToPhone={() => setMode("phone")}
-      />
-    );
-  }
-
-  if (mode === "phone") {
-    return (
-      <PhoneLoginForm
-        nextPath={nextPath}
-        onBack={() => setMode("choice")}
-        onSwitchToEmail={() => setMode("email")}
       />
     );
   }
@@ -72,28 +59,6 @@ export function LoginForm({
             />
           </svg>
           Continue with Email
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setMode("phone")}
-          className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-line bg-white px-5 text-base font-semibold text-foreground transition-colors hover:bg-background"
-        >
-          <svg
-            className="h-5 w-5 shrink-0 text-muted"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"
-            />
-          </svg>
-          Continue with Phone
         </button>
       </div>
 
