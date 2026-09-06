@@ -30,7 +30,7 @@ export function AddressStep({
   onContinue,
 }: AddressStepProps) {
   const canContinue = showNewAddress
-    ? customer.fullName.trim() && customer.phone.trim() && customer.address.trim() && customer.area.trim() && customer.city.trim()
+    ? customer.fullName.trim() && customer.address.trim() && customer.area.trim() && customer.city.trim()
     : selectedAddressId;
 
   return (
@@ -106,7 +106,7 @@ export function AddressStep({
           <h2 className="text-xl font-bold text-foreground">New address details</h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-2">
             <label className="text-sm font-semibold text-foreground">Full name<input required value={customer.fullName} onChange={(event) => onCustomerChange("fullName", event.target.value)} className={inputClass} /></label>
-            <label className="text-sm font-semibold text-foreground">Phone number<input required type="tel" value={customer.phone} onChange={(event) => onCustomerChange("phone", event.target.value)} className={inputClass} /></label>
+            <label className="text-sm font-semibold text-foreground">Phone number <span className="font-normal text-muted">(verification at confirmation)</span><input type="tel" value={customer.phone} onChange={(event) => onCustomerChange("phone", event.target.value)} className={inputClass} /></label>
             <label className="text-sm font-semibold text-foreground sm:col-span-2">Email <span className="font-normal text-muted">(optional)</span><input type="email" value={customer.email} onChange={(event) => onCustomerChange("email", event.target.value)} className={inputClass} /></label>
             <label className="text-sm font-semibold text-foreground sm:col-span-2">Address<input required value={customer.address} onChange={(event) => onCustomerChange("address", event.target.value)} className={inputClass} /></label>
             <label className="text-sm font-semibold text-foreground">Area<input required value={customer.area} onChange={(event) => onCustomerChange("area", event.target.value)} className={inputClass} /></label>

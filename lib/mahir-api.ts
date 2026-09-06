@@ -1529,6 +1529,7 @@ export async function fetchCurrentCustomer(
 export type UpdateCustomerInput = {
   full_name?: string | null;
   email?: string | null;
+  phone?: string | null;
 };
 
 export type UpdateCustomerResponse = {
@@ -1552,6 +1553,11 @@ export async function updateCurrentCustomer(
   if ("email" in data) {
     payload.email =
       typeof data.email === "string" ? data.email.trim() : data.email;
+  }
+
+  if ("phone" in data) {
+    payload.phone =
+      typeof data.phone === "string" ? data.phone.trim() : data.phone;
   }
 
   const response = await fetch(`${MAHIR_API_URL}/auth/me`, {
@@ -1580,6 +1586,105 @@ export async function updateCurrentCustomer(
   if (!response.ok || !result.success) {
     throw new MahirApiError(
       result?.message || `Unable to update profile (${response.status}).`,
+      response.status,
+      result?.code,
+    );
+  }
+
+  return result;
+}
+
+export type RequestPhoneVerificationResponse = {
+  success: boolean;
+  message?: string;
+  data?: {
+    phone: string;
+    expires_in_seconds: number;
+    dev_otp?: string;
+  };
+};
+
+export async function requestPhoneVerification(
+  token: string,
+  phone?: string,
+): Promise<RequestPhoneVerificationResponse> {
+  const payload: Record<string, unknown> = {};
+  if (typeof phone === "string" && phone.trim()) {
+    payload.phone = phone.trim();
+  }
+
+  const response = await fetch(`${MAHIR_API_URL}/auth/phone/request-verification`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  let result:
+    | (RequestPhoneVerificationResponse & WordPressAuthApiErrorResponse)
+    | null = null;
+
+  try {
+    result = (await response.json()) as RequestPhoneVerificationResponse &
+      WordPressAuthApiErrorResponse;
+  } catch {
+    throw new MahirApiError(
+      `Unable to request phone verification (${response.status}).`,
+      response.status,
+    );
+  }
+
+  if (!response.ok || !result.success) {
+    throw new MahirApiError(
+      result?.message || `Unable to request phone verification (${response.status}).`,
+      response.status,
+      result?.code,
+    );
+  }
+
+  return result;
+}
+
+export type VerifyPhoneResponse = {
+  success: boolean;
+  message?: string;
+  data?: {
+    customer: AuthCustomer;
+  };
+};
+
+export async function verifyPhone(
+  token: string,
+  otp: string,
+): Promise<VerifyPhoneResponse> {
+  const response = await fetch(`${MAHIR_API_URL}/auth/phone/verify`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ otp: otp.trim() }),
+  });
+
+  let result:
+    | (VerifyPhoneResponse & WordPressAuthApiErrorResponse)
+    | null = null;
+
+  try {
+    result = (await response.json()) as VerifyPhoneResponse &
+      WordPressAuthApiErrorResponse;
+  } catch {
+    throw new MahirApiError(
+      `Unable to verify phone (${response.status}).`,
+      response.status,
+    );
+  }
+
+  if (!response.ok || !result.success) {
+    throw new MahirApiError(
+      result?.message || `Unable to verify phone (${response.status}).`,
       response.status,
       result?.code,
     );

@@ -12,14 +12,17 @@ import type { Address, BookingSnapshot, CustomerDetails, Schedule } from "@/comp
 import { useCart } from "@/components/cart/cart-context";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { PhoneVerificationModal } from "@/components/booking/phone-verification-modal";
 import { mockCustomerProfile } from "@/data/profile";
 import {
   clearAuthToken,
   createBooking,
   fetchAddresses,
+  fetchCurrentCustomer,
   fetchServiceSlots,
   getAuthToken,
   MahirApiError,
+  type AuthCustomer,
   type BookingSlot,
   type MahirAddress,
 } from "@/lib/mahir-api";
@@ -113,6 +116,8 @@ export default function BookingPage() {
   const [selectedAddressId, setSelectedAddressId] = useState("");
   const [showNewAddress, setShowNewAddress] = useState(true);
   const [customer, setCustomer] = useState<CustomerDetails>(initialCustomer);
+  const [authCustomer, setAuthCustomer] = useState<AuthCustomer | null>(null);
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [booking, setBooking] = useState<BookingSnapshot | null>(null);
 
   const availableDates = useMemo(() => getAvailableBookingDates(), []);
@@ -164,6 +169,29 @@ export default function BookingPage() {
       };
     }
 
+    const loadCustomerProfile = async (authToken: string) => {
+      try {
+        const response = await fetchCurrentCustomer(authToken);
+        if (!isMounted) return;
+        if (response.data?.customer) {
+          const current = response.data.customer;
+          setAuthCustomer(current);
+          setCustomer((prev) => ({
+            ...prev,
+            fullName: current.full_name || prev.fullName,
+            phone: current.phone || prev.phone,
+            email: current.email || prev.email,
+          }));
+        }
+      } catch (error) {
+        if (!isMounted) return;
+        if (error instanceof MahirApiError && error.status === 401) {
+          clearAuthToken();
+          router.replace("/login?next=/booking");
+        }
+      }
+    };
+
     const loadSavedAddresses = async (authToken: string) => {
       setSavedAddressesLoading(true);
       setSavedAddressesError(null);
@@ -200,6 +228,7 @@ export default function BookingPage() {
       }
     };
 
+    void loadCustomerProfile(token);
     void loadSavedAddresses(token);
 
     return () => {
@@ -303,9 +332,9 @@ export default function BookingPage() {
         ...current,
         address: activeAddress.fullAddress,
         city: activeAddress.city,
-        fullName: current.fullName || mockCustomerProfile.fullName,
-        phone: current.phone || mockCustomerProfile.phone,
-        email: current.email || mockCustomerProfile.email,
+        fullName: current.fullName || authCustomer?.full_name || "",
+        phone: current.phone || authCustomer?.phone || "",
+        email: current.email || authCustomer?.email || "",
       }));
     }
     setStep(2);
@@ -313,14 +342,11 @@ export default function BookingPage() {
 
   const continueFromSchedule = () => setStep(3);
 
-  const confirmBooking = async () => {
+  const executeBookingCreation = async (
+    token: string,
+    verifiedCustomer?: AuthCustomer,
+  ) => {
     if (submissionInFlight.current) {
-      return;
-    }
-
-    const token = getAuthToken();
-    if (!token) {
-      router.replace("/login?next=/booking");
       return;
     }
 
@@ -334,6 +360,9 @@ export default function BookingPage() {
       return;
     }
 
+    const customerPhone =
+      verifiedCustomer?.phone || customer.phone.trim() || authCustomer?.phone || "";
+
     submissionInFlight.current = true;
     setIsSubmitting(true);
     setSubmissionError(null);
@@ -345,9 +374,9 @@ export default function BookingPage() {
         date: selectedIsoDate,
         slotStart,
         customer: {
-          name: customer.fullName.trim(),
-          phone: customer.phone.trim(),
-          email: customer.email.trim() || undefined,
+          name: customer.fullName.trim() || (verifiedCustomer?.full_name ?? ""),
+          phone: customerPhone,
+          email: customer.email.trim() || (verifiedCustomer?.email ?? undefined) || undefined,
         },
         address: {
           line: activeAddress.fullAddress.trim(),
@@ -401,6 +430,12 @@ export default function BookingPage() {
         router.replace("/login?next=/booking");
       } else if (
         error instanceof MahirApiError &&
+        (error.code === "mahir_phone_required" ||
+          error.code === "mahir_phone_verification_required")
+      ) {
+        setShowPhoneModal(true);
+      } else if (
+        error instanceof MahirApiError &&
         error.code === "mahir_slot_unavailable"
       ) {
         setSlots((current) =>
@@ -424,6 +459,57 @@ export default function BookingPage() {
     } finally {
       submissionInFlight.current = false;
       setIsSubmitting(false);
+    }
+  };
+
+  const confirmBooking = async () => {
+    if (submissionInFlight.current) {
+      return;
+    }
+
+    const token = getAuthToken();
+    if (!token) {
+      router.replace("/login?next=/booking");
+      return;
+    }
+
+    let currentCustomer = authCustomer;
+    if (!currentCustomer) {
+      try {
+        const response = await fetchCurrentCustomer(token);
+        if (response.data?.customer) {
+          currentCustomer = response.data.customer;
+          setAuthCustomer(currentCustomer);
+        }
+      } catch (err) {
+        if (err instanceof MahirApiError && err.status === 401) {
+          clearAuthToken();
+          router.replace("/login?next=/booking");
+          return;
+        }
+      }
+    }
+
+    // Server-side requirement: must have verified phone number before booking
+    if (!currentCustomer?.phone || !currentCustomer.phone_verified) {
+      setShowPhoneModal(true);
+      return;
+    }
+
+    await executeBookingCreation(token, currentCustomer);
+  };
+
+  const handlePhoneVerified = (updatedCustomer: AuthCustomer) => {
+    setAuthCustomer(updatedCustomer);
+    setCustomer((prev) => ({
+      ...prev,
+      phone: updatedCustomer.phone || prev.phone,
+    }));
+    setShowPhoneModal(false);
+
+    const token = getAuthToken();
+    if (token) {
+      void executeBookingCreation(token, updatedCustomer);
     }
   };
 
@@ -575,6 +661,12 @@ export default function BookingPage() {
         </div>
       </main>
       <SiteFooter />
+      <PhoneVerificationModal
+        isOpen={showPhoneModal}
+        onClose={() => setShowPhoneModal(false)}
+        initialPhone={customer.phone || authCustomer?.phone}
+        onVerified={handlePhoneVerified}
+      />
     </>
   );
 }

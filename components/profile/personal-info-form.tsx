@@ -37,6 +37,7 @@ function EditForm({
   const router = useRouter();
   const [fullName, setFullName] = useState(customer.full_name ?? "");
   const [email, setEmail] = useState(customer.email ?? "");
+  const [phone, setPhone] = useState(customer.phone ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,6 +46,7 @@ function EditForm({
 
     const trimmedName = fullName.trim();
     const trimmedEmail = email.trim();
+    const trimmedPhone = phone.trim();
 
     if (trimmedName.length > 100) {
       setError("Full name cannot exceed 100 characters.");
@@ -61,6 +63,14 @@ function EditForm({
       return;
     }
 
+    if (trimmedPhone) {
+      const cleanPhone = trimmedPhone.replace(/[\s-]/g, "");
+      if (!/^(?:\+92|0092|0)?3[0-9]{9}$/.test(cleanPhone)) {
+        setError("Please enter a valid Pakistani mobile number (e.g. 0300 1234567).");
+        return;
+      }
+    }
+
     const token = getAuthToken();
     if (!token) {
       router.replace("/login?next=/profile");
@@ -74,6 +84,7 @@ function EditForm({
       const response = await updateCurrentCustomer(token, {
         full_name: trimmedName.length > 0 ? trimmedName : null,
         email: trimmedEmail.length > 0 ? trimmedEmail : null,
+        phone: trimmedPhone.length > 0 ? trimmedPhone : null,
       });
 
       if (response.data?.customer) {
@@ -121,17 +132,20 @@ function EditForm({
           <label className="text-sm font-semibold text-foreground">
             Phone Number
             <input
-              type="text"
-              value={customer.phone || ""}
-              placeholder={customer.phone ? undefined : "Phone not added"}
-              disabled
-              readOnly
-              aria-readonly="true"
+              type="tel"
+              value={phone}
+              disabled={saving}
+              maxLength={25}
+              onChange={(e) => {
+                setPhone(e.target.value);
+                setError(null);
+              }}
+              placeholder="0300 1234567"
               className={inputClass}
             />
           </label>
           <p className="mt-1 text-xs text-muted">
-            Phone number cannot be changed at this time.
+            Changing phone number resets verification; re-verification is required at booking.
           </p>
         </div>
 
@@ -244,15 +258,26 @@ export function PersonalInfoForm({
               Full Name
             </dt>
             <dd className="mt-2 font-semibold text-foreground">
-              {profile.fullName}
+              {customer.full_name || profile.fullName}
             </dd>
           </div>
           <div>
             <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">
               Phone Number
             </dt>
-            <dd className="mt-2 font-semibold text-foreground">
-              {profile.phone}
+            <dd className="mt-2 flex items-center gap-2 font-semibold text-foreground">
+              <span>{customer.phone || profile.phone || "Phone not added"}</span>
+              {customer.phone ? (
+                customer.phone_verified ? (
+                  <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                    Verified
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                    Unverified
+                  </span>
+                )
+              ) : null}
             </dd>
           </div>
           <div>
@@ -260,7 +285,7 @@ export function PersonalInfoForm({
               Email
             </dt>
             <dd className="mt-2 font-semibold text-foreground">
-              {profile.email || "Email not added"}
+              {customer.email || profile.email || "Email not added"}
             </dd>
           </div>
           <div>
