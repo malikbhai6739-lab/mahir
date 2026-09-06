@@ -1211,10 +1211,31 @@ export type RequestOtpResponse = {
 
 export type AuthCustomer = {
   id: number;
-  phone: string;
+  phone: string | null;
   full_name: string | null;
   email: string | null;
   phone_verified: boolean;
+  email_verified?: boolean;
+};
+
+export type RequestEmailCodeResponse = {
+  success: boolean;
+  message?: string;
+  data?: {
+    email: string;
+    expires_in_seconds: number;
+    dev_code?: string;
+  };
+};
+
+export type VerifyEmailCodeResponse = {
+  success: boolean;
+  message?: string;
+  data?: {
+    token: string;
+    expires_in_seconds: number;
+    customer: AuthCustomer;
+  };
 };
 
 export type VerifyOtpResponse = {
@@ -1301,6 +1322,97 @@ export async function verifyOtp(
   if (!response.ok || !result.success) {
     throw new MahirApiError(
       result?.message || `Unable to verify OTP (${response.status}).`,
+      response.status,
+      result?.code,
+    );
+  }
+
+  return result;
+}
+
+export async function requestEmailCode(
+  email: string,
+): Promise<RequestEmailCodeResponse> {
+  const response = await fetch(`${MAHIR_API_URL}/auth/email/request-code`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email }),
+  });
+
+  let result:
+    | (RequestEmailCodeResponse & WordPressAuthApiErrorResponse)
+    | null = null;
+
+  try {
+    result = (await response.json()) as RequestEmailCodeResponse &
+      WordPressAuthApiErrorResponse;
+  } catch {
+    throw new MahirApiError(
+      `Unable to request verification code (${response.status}).`,
+      response.status,
+    );
+  }
+
+  if (!response.ok || !result.success) {
+    let friendlyMessage = result?.message;
+    if (response.status === 429) {
+      friendlyMessage =
+        result?.message ||
+        "Please wait before requesting another verification code.";
+    } else if (response.status >= 500) {
+      friendlyMessage =
+        "Unable to send verification code right now. Please try again.";
+    }
+
+    throw new MahirApiError(
+      friendlyMessage ||
+        `Unable to request verification code (${response.status}).`,
+      response.status,
+      result?.code,
+    );
+  }
+
+  return result;
+}
+
+export async function verifyEmailCode(
+  email: string,
+  code: string,
+): Promise<VerifyEmailCodeResponse> {
+  const response = await fetch(`${MAHIR_API_URL}/auth/email/verify-code`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, code }),
+  });
+
+  let result:
+    | (VerifyEmailCodeResponse & WordPressAuthApiErrorResponse)
+    | null = null;
+
+  try {
+    result = (await response.json()) as VerifyEmailCodeResponse &
+      WordPressAuthApiErrorResponse;
+  } catch {
+    throw new MahirApiError(
+      `Unable to verify email code (${response.status}).`,
+      response.status,
+    );
+  }
+
+  if (!response.ok || !result.success) {
+    let friendlyMessage = result?.message;
+    if (response.status >= 500) {
+      friendlyMessage =
+        "Verification service is temporarily unavailable. Please try again.";
+    }
+
+    throw new MahirApiError(
+      friendlyMessage ||
+        `Unable to verify email code (${response.status}).`,
       response.status,
       result?.code,
     );
@@ -1447,6 +1559,7 @@ export {
   getAuthToken,
   setAuthToken,
   clearAuthToken,
+  sanitizeNextPath,
 } from "./auth-storage";
 
 export async function getCurrentCustomer(): Promise<AuthCustomer | null> {

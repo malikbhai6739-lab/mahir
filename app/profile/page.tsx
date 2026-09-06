@@ -92,7 +92,7 @@ export default function ProfilePage() {
   const profile: CustomerProfile | null = customer
     ? {
         fullName: customer.full_name?.trim() || "Mahir Customer",
-        phone: customer.phone,
+        phone: customer.phone || "Phone not added",
         email: customer.email?.trim() || "Email not added",
         city: "Not specified",
       }

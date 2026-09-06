@@ -1,36 +1,35 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { requestOtp, sanitizeNextPath, MahirApiError } from "@/lib/mahir-api";
+import { requestEmailCode, sanitizeNextPath, MahirApiError } from "@/lib/mahir-api";
 
-function normalizePhone(value: string) {
-  const digits = value.replace(/\D/g, "");
-  if (digits.startsWith("0")) return digits.slice(1);
-  if (digits.startsWith("92")) return digits.slice(2);
-  return digits;
-}
-
-export function PhoneLoginForm({
+export function EmailLoginForm({
   nextPath,
   onBack,
-  onSwitchToEmail,
+  onSwitchToPhone,
 }: {
   nextPath: string;
   onBack?: () => void;
-  onSwitchToEmail?: () => void;
+  onSwitchToPhone?: () => void;
 }) {
   const router = useRouter();
-  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const normalized = normalizePhone(phone);
-    if (!/^3\d{9}$/.test(normalized)) {
-      setError("Enter a valid mobile number.");
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
+      setError("Please enter your email address.");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      setError("Please enter a valid email address.");
       return;
     }
 
@@ -38,20 +37,21 @@ export function PhoneLoginForm({
       setLoading(true);
       setError("");
 
-      const fullPhone = `0${normalized}`;
-      const result = await requestOtp(fullPhone);
+      await requestEmailCode(trimmedEmail);
 
-      // Pass only the normalized phone needed for verification.
-      const targetPhone = result.data?.phone || fullPhone;
       const sanitizedNext = sanitizeNextPath(nextPath);
-      const query = new URLSearchParams({ phone: targetPhone });
+      const query = new URLSearchParams({ email: trimmedEmail });
       if (sanitizedNext !== "/profile") {
         query.set("next", sanitizedNext);
       }
-      router.push(`/verify-otp?${query.toString()}`);
+      router.push(`/verify-email?${query.toString()}`);
     } catch (err) {
       if (err instanceof MahirApiError) {
-        setError(err.message);
+        if (err.status === 429) {
+          setError("Please wait before requesting another verification code.");
+        } else {
+          setError(err.message);
+        }
       } else if (err instanceof Error) {
         setError(err.message || "Failed to send verification code. Please try again.");
       } else {
@@ -78,38 +78,40 @@ export function PhoneLoginForm({
       ) : (
         <p className="text-xs font-semibold uppercase tracking-[0.13em] text-brand">Sign in</p>
       )}
-      <h1 className="mt-3 text-3xl font-bold tracking-[-0.02em] text-foreground">Sign in with Phone</h1>
-      <p className="mt-3 text-base leading-7 text-muted">Enter your mobile number to continue.</p>
+      <h1 className="mt-3 text-3xl font-bold tracking-[-0.02em] text-foreground">Sign in with Email</h1>
+      <p className="mt-3 text-base leading-7 text-muted">
+        Enter your email address and we&apos;ll send you a verification code.
+      </p>
       <form onSubmit={handleSubmit} noValidate className="mt-8">
-        <label htmlFor="mobile-number" className="text-sm font-semibold text-foreground">Mobile number</label>
-        <div className={`mt-2 flex h-12 overflow-hidden rounded-xl border bg-white ${error ? "border-red-500" : "border-line focus-within:border-brand"}`}>
-          <span className="grid w-14 shrink-0 place-items-center border-r border-line bg-background text-sm font-semibold text-foreground">+92</span>
-          <input
-            id="mobile-number"
-            name="phone"
-            type="tel"
-            inputMode="numeric"
-            autoComplete="tel-national"
-            maxLength={11}
-            value={phone}
-            disabled={loading}
-            onChange={(event) => {
-              setPhone(event.target.value.replace(/\D/g, ""));
-              setError("");
-            }}
-            placeholder="300 1234567"
-            aria-invalid={Boolean(error)}
-            aria-describedby={error ? "phone-error" : "phone-help"}
-            className="min-w-0 flex-1 px-3 text-base text-foreground outline-none disabled:opacity-60"
-          />
-        </div>
+        <label htmlFor="email-address" className="text-sm font-semibold text-foreground">
+          Email address
+        </label>
+        <input
+          id="email-address"
+          name="email"
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          disabled={loading}
+          onChange={(event) => {
+            setEmail(event.target.value);
+            setError("");
+          }}
+          placeholder="name@example.com"
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? "email-error" : "email-help"}
+          className={`mt-2 h-12 w-full rounded-xl border bg-white px-3 text-base text-foreground outline-none focus:border-brand disabled:opacity-60 ${
+            error ? "border-red-500" : "border-line"
+          }`}
+        />
         {error ? (
-          <p id="phone-error" role="alert" className="mt-2 text-sm text-red-600">
+          <p id="email-error" role="alert" className="mt-2 text-sm text-red-600">
             {error}
           </p>
         ) : (
-          <p id="phone-help" className="mt-2 text-sm text-muted">
-            We&apos;ll send you a verification code.
+          <p id="email-help" className="mt-2 text-sm text-muted">
+            We&apos;ll send a 6-digit code to this email.
           </p>
         )}
         <button
@@ -120,14 +122,14 @@ export function PhoneLoginForm({
           {loading ? "Sending code..." : "Continue"}
         </button>
       </form>
-      {onSwitchToEmail ? (
+      {onSwitchToPhone ? (
         <div className="mt-6 text-center">
           <button
             type="button"
-            onClick={onSwitchToEmail}
+            onClick={onSwitchToPhone}
             className="text-sm font-semibold text-brand hover:text-brand-dark"
           >
-            Continue with email instead
+            Continue with phone instead
           </button>
         </div>
       ) : null}

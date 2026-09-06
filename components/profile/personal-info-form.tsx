@@ -122,7 +122,8 @@ function EditForm({
             Phone Number
             <input
               type="text"
-              value={customer.phone}
+              value={customer.phone || ""}
+              placeholder={customer.phone ? undefined : "Phone not added"}
               disabled
               readOnly
               aria-readonly="true"

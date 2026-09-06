@@ -82,3 +82,26 @@ export function subscribeAuthState(onChange: () => void): () => void {
     window.removeEventListener(MAHIR_AUTH_STATE_EVENT, onChange);
   };
 }
+
+/**
+ * Sanitize a redirect next path to prevent open redirect vulnerabilities.
+ * Only allows relative paths starting with exactly one leading slash.
+ */
+export function sanitizeNextPath(path?: string | null): string {
+  if (!path || typeof path !== "string") {
+    return "/profile";
+  }
+
+  const trimmed = path.trim();
+  if (
+    trimmed.startsWith("/") &&
+    !trimmed.startsWith("//") &&
+    !trimmed.includes("://") &&
+    !trimmed.includes("\r") &&
+    !trimmed.includes("\n")
+  ) {
+    return trimmed;
+  }
+
+  return "/profile";
+}
