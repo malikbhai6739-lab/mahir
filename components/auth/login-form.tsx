@@ -1,9 +1,10 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useState } from "react";
 import { EmailLoginForm } from "./email-login-form";
 import { PhoneLoginForm } from "./phone-login-form";
+import { GoogleSignInButton } from "./google-sign-in-button";
 
 export type LoginMode = "choice" | "email" | "phone";
 
@@ -49,6 +50,8 @@ export function LoginForm({
       </p>
 
       <div className="mt-8 space-y-3">
+        <GoogleSignInButton nextPath={nextPath} />
+
         <button
           type="button"
           onClick={() => setMode("email")}

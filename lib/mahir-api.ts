@@ -1238,6 +1238,16 @@ export type VerifyEmailCodeResponse = {
   };
 };
 
+export type VerifyGoogleAuthResponse = {
+  success: boolean;
+  message?: string;
+  data?: {
+    token: string;
+    expires_in_seconds: number;
+    customer: AuthCustomer;
+  };
+};
+
 export type VerifyOtpResponse = {
   success: boolean;
   message: string;
@@ -1413,6 +1423,61 @@ export async function verifyEmailCode(
     throw new MahirApiError(
       friendlyMessage ||
         `Unable to verify email code (${response.status}).`,
+      response.status,
+      result?.code,
+    );
+  }
+
+  return result;
+}
+
+export async function verifyGoogleCredential(
+  credential: string,
+): Promise<VerifyGoogleAuthResponse> {
+  const response = await fetch(`${MAHIR_API_URL}/auth/google`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ credential }),
+  });
+
+  let result:
+    | (VerifyGoogleAuthResponse & WordPressAuthApiErrorResponse)
+    | null = null;
+
+  try {
+    result = (await response.json()) as VerifyGoogleAuthResponse &
+      WordPressAuthApiErrorResponse;
+  } catch {
+    throw new MahirApiError(
+      `Unable to verify Google credential (${response.status}).`,
+      response.status,
+    );
+  }
+
+  if (!response.ok || !result.success) {
+    let friendlyMessage = result?.message;
+    if (response.status === 409) {
+      if (result?.code === "mahir_ambiguous_account") {
+        friendlyMessage =
+          "Multiple accounts match this email address. Please contact support.";
+      } else {
+        friendlyMessage =
+          result?.message ||
+          "An account conflict occurred. Please contact support or sign in with another method.";
+      }
+    } else if (response.status === 401) {
+      friendlyMessage =
+        "Unable to verify Google account. Please try again.";
+    } else if (response.status >= 500) {
+      friendlyMessage =
+        "Google sign-in is temporarily unavailable. Please try again or use another method.";
+    }
+
+    throw new MahirApiError(
+      friendlyMessage ||
+        `Unable to verify Google credential (${response.status}).`,
       response.status,
       result?.code,
     );
