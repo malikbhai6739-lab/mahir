@@ -1471,8 +1471,13 @@ export async function verifyGoogleCredential(
       friendlyMessage =
         "Unable to verify Google account. Please try again.";
     } else if (response.status >= 500) {
-      friendlyMessage =
-        "Google sign-in is temporarily unavailable. Please try again or use another method.";
+      if (result?.code === "mahir_google_auth_not_configured") {
+        friendlyMessage =
+          "Google sign-in is not configured on the server. Please sign in with Email or Phone.";
+      } else {
+        friendlyMessage =
+          "Google sign-in is temporarily unavailable. Please try again or use another method.";
+      }
     }
 
     throw new MahirApiError(
