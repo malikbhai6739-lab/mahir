@@ -1409,6 +1409,7 @@ export async function fetchCurrentCustomer(
 ): Promise<CurrentCustomerResponse> {
   const response = await fetch(`${MAHIR_API_URL}/auth/me`, {
     method: "GET",
+    cache: "no-store",
     headers: {
       Authorization: `Bearer ${token}`,
     },
