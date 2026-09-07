@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { CartItem } from "@/components/cart/cart-item";
 import { useCart } from "@/components/cart/cart-context";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -10,10 +9,9 @@ import { SiteHeader } from "@/components/layout/site-header";
 const priceFormatter = new Intl.NumberFormat("en-PK");
 
 export default function CartPage() {
-  const { items, updateQuantity, removeItem, subtotal, discount, estimatedTotal, hydrated } = useCart();
-  const [promoCode, setPromoCode] = useState("");
-
+  const { items, removeItem, subtotal, discount, estimatedTotal, hydrated } = useCart();
   const serviceFee = 0;
+
   if (!hydrated) {
     return (
       <>
@@ -51,7 +49,7 @@ export default function CartPage() {
                 Your cart is empty
               </h1>
               <p className="mt-4 text-base leading-7 text-muted sm:text-lg">
-                Browse professional home services and add what you need.
+                Browse professional home services and choose the service you need.
               </p>
               <Link
                 href="/services"
@@ -74,13 +72,13 @@ export default function CartPage() {
         <div className="site-container py-10 sm:py-14">
           <div className="mb-8">
             <p className="text-xs font-semibold uppercase tracking-[0.13em] text-brand">
-              Your services
+              Selected service
             </p>
             <h1 className="mt-3 text-3xl font-bold tracking-[-0.02em] text-foreground sm:text-4xl">
-              Your Services
+              Your Service
             </h1>
             <p className="mt-3 max-w-2xl text-base leading-7 text-muted sm:text-lg">
-              Review your selected services before continuing to booking.
+              Review your selected service before continuing to booking.
             </p>
           </div>
 
@@ -90,8 +88,6 @@ export default function CartPage() {
                 <CartItem
                   key={item.id}
                   item={item}
-                  onIncrease={(id) => updateQuantity(id, item.quantity + 1)}
-                  onDecrease={(id) => updateQuantity(id, item.quantity - 1)}
                   onRemove={removeItem}
                 />
               ))}
@@ -110,12 +106,14 @@ export default function CartPage() {
                       Rs. {priceFormatter.format(subtotal)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <span>Discount</span>
-                    <span className="font-medium text-success">
-                      - Rs. {priceFormatter.format(discount)}
-                    </span>
-                  </div>
+                  {discount > 0 ? (
+                    <div className="flex items-center justify-between gap-4">
+                      <span>Discount</span>
+                      <span className="font-medium text-success">
+                        - Rs. {priceFormatter.format(discount)}
+                      </span>
+                    </div>
+                  ) : null}
                   <div className="flex items-center justify-between gap-4">
                     <span>Service Fee</span>
                     <span className="font-medium text-foreground">
@@ -127,28 +125,6 @@ export default function CartPage() {
                       <span>Estimated Total</span>
                       <span>Rs. {priceFormatter.format(estimatedTotal)}</span>
                     </div>
-                  </div>
-                </div>
-
-                <div className="mt-6 rounded-2xl border border-line bg-background p-3">
-                  <label htmlFor="promo-code" className="block text-xs font-semibold uppercase tracking-[0.12em] text-muted">
-                    Promo code
-                  </label>
-                  <div className="mt-3 flex gap-2">
-                    <input
-                      id="promo-code"
-                      type="text"
-                      value={promoCode}
-                      onChange={(event) => setPromoCode(event.target.value)}
-                      placeholder="Enter code"
-                      className="h-12 flex-1 rounded-xl border border-line bg-white px-3 text-base text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-brand"
-                    />
-                    <button
-                      type="button"
-                      className="inline-flex h-12 items-center justify-center rounded-xl border border-line bg-white px-4 text-sm font-semibold text-foreground transition-colors hover:border-brand hover:text-brand"
-                    >
-                      Apply
-                    </button>
                   </div>
                 </div>
 
@@ -167,7 +143,7 @@ export default function CartPage() {
                     href="/services"
                     className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-line bg-white px-5 text-base font-semibold text-foreground transition-colors hover:border-brand hover:text-brand"
                   >
-                    Add More Services
+                    Change Service
                   </Link>
                 </div>
               </div>

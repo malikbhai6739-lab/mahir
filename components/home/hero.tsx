@@ -1,13 +1,25 @@
 import Image from "next/image";
-import { cities, trustIndicators } from "@/data/homepage";
-import { getWordPressServices, getWordPressCategories } from "@/lib/mahir-api";
+import { trustIndicators } from "@/data/homepage";
+import { getWordPressServices, getWordPressCategories, getWordPressCities } from "@/lib/mahir-api";
 import { HeroSearch } from "@/components/home/hero-search";
 
 export async function Hero() {
-  const [services, categories] = await Promise.all([
+  const [services, categories, liveCities] = await Promise.all([
     getWordPressServices(),
     getWordPressCategories(),
+    getWordPressCities(),
   ]);
+
+  // Prefer cities that have active published service availability
+  const activeCitySlugs = new Set<string>();
+  services.forEach((s) => {
+    s.availableCities?.forEach((c) => activeCitySlugs.add(c.slug));
+  });
+
+  const activeCities = liveCities.filter(
+    (c) => activeCitySlugs.has(c.slug) || c.count > 0,
+  );
+  const citiesToUse = activeCities.length > 0 ? activeCities : liveCities;
 
   return (
     <section id="booking" className="relative overflow-hidden bg-white">
@@ -28,7 +40,7 @@ export async function Hero() {
           </p>
 
           <HeroSearch
-            cities={cities}
+            cities={citiesToUse.map((c) => c.name)}
             initialServices={services}
             initialCategories={categories}
           />

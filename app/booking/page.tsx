@@ -13,7 +13,7 @@ import { useCart } from "@/components/cart/cart-context";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { PhoneVerificationModal } from "@/components/booking/phone-verification-modal";
-import { mockCustomerProfile } from "@/data/profile";
+import { getStoredCity, setStoredCity } from "@/lib/city-storage";
 import {
   clearAuthToken,
   createBooking,
@@ -21,16 +21,19 @@ import {
   fetchCurrentCustomer,
   fetchServiceSlots,
   getAuthToken,
+  getWordPressCities,
   MahirApiError,
   type AuthCustomer,
   type BookingSlot,
   type MahirAddress,
+  type WordPressCity,
 } from "@/lib/mahir-api";
 
+// Empty initial customer state - NEVER use mock dummy identity in live bookings
 const initialCustomer: CustomerDetails = {
-  fullName: mockCustomerProfile.fullName,
-  phone: mockCustomerProfile.phone,
-  email: mockCustomerProfile.email,
+  fullName: "",
+  phone: "",
+  email: "",
   address: "",
   area: "",
   city: "",
@@ -105,13 +108,12 @@ function getAvailableBookingDates(): Schedule[] {
 
 export default function BookingPage() {
   const router = useRouter();
-  const { items, subtotal, discount, estimatedTotal, hydrated } = useCart();
+  const { items, subtotal, discount, estimatedTotal, hydrated, clearCart } = useCart();
   const [step, setStep] = useState(1);
+  const [availableCities, setAvailableCities] = useState<WordPressCity[]>([]);
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
   const [savedAddressesLoading, setSavedAddressesLoading] = useState(true);
-  const [savedAddressesError, setSavedAddressesError] = useState<string | null>(
-    null,
-  );
+  const [savedAddressesError, setSavedAddressesError] = useState<string | null>(null);
   const [savedAddressesReload, setSavedAddressesReload] = useState(0);
   const [selectedAddressId, setSelectedAddressId] = useState("");
   const [showNewAddress, setShowNewAddress] = useState(true);
@@ -135,6 +137,38 @@ export default function BookingPage() {
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const submissionInFlight = useRef(false);
 
+  // Load canonical backend cities and pre-fill stored city if available
+  useEffect(() => {
+    let isMounted = true;
+    getWordPressCities()
+      .then((cities) => {
+        if (!isMounted) return;
+        setAvailableCities(cities);
+
+        const stored = getStoredCity();
+        if (stored) {
+          const matched = cities.find(
+            (c) =>
+              c.slug === stored.slug ||
+              c.name.toLowerCase() === stored.name.toLowerCase(),
+          );
+          if (matched) {
+            setCustomer((prev) => ({
+              ...prev,
+              city: prev.city || matched.name,
+            }));
+          }
+        }
+      })
+      .catch(() => {
+        // Handled gracefully with fallback
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const selectedAddress =
     savedAddresses.find((address) => address.id === selectedAddressId) ??
     savedAddresses[0] ??
@@ -145,25 +179,34 @@ export default function BookingPage() {
     ? {
         id: "new-address",
         label: "New address",
-        fullAddress: `${customer.address}, ${customer.area}`,
+        fullAddress: [customer.address, customer.area].filter(Boolean).join(", "),
         city: customer.city,
         landmark: customer.landmark,
       }
     : selectedAddress;
 
   const serviceSlug = items[0]?.slug ?? "";
-  const citySlug = activeAddress.city
-    ? activeAddress.city.toLowerCase().trim().replace(/\s+/g, "-")
-    : "";
+
+  // Authoritative city slug resolution matching WordPress taxonomy term
+  const rawCity = activeAddress?.city?.trim() ?? "";
+  const matchedCity = availableCities.find(
+    (c) =>
+      c.name.toLowerCase() === rawCity.toLowerCase() ||
+      c.slug === rawCity.toLowerCase(),
+  );
+  const citySlug = matchedCity
+    ? matchedCity.slug
+    : rawCity.toLowerCase().replace(/\s+/g, "-");
+
   const selectedIsoDate = schedule.isoDate ?? "";
 
+  // Authenticated customer loading
   useEffect(() => {
     let isMounted = true;
     const token = getAuthToken();
 
     if (!token) {
       router.replace("/login?next=/booking");
-
       return () => {
         isMounted = false;
       };
@@ -236,6 +279,7 @@ export default function BookingPage() {
     };
   }, [router, savedAddressesReload]);
 
+  // Load slots for selected service, city and date
   useEffect(() => {
     let isMounted = true;
 
@@ -262,11 +306,23 @@ export default function BookingPage() {
       } catch (error) {
         if (!isMounted) return;
         setSlots([]);
-        setSlotsError(
-          error instanceof Error
-            ? error.message
-            : "Unable to load time slots. Please try again.",
-        );
+
+        // Handle city/service mismatch with a clear, user-friendly message
+        const errMsg = error instanceof Error ? error.message : "";
+        if (
+          errMsg.includes("not available for this service") ||
+          errMsg.includes("City was not found") ||
+          errMsg.includes("mahir_city_not_assigned") ||
+          errMsg.includes("mahir_invalid_city")
+        ) {
+          setSlotsError(
+            `This service is currently not available in ${activeAddress.city || "the selected city"}. Please choose another city or service.`,
+          );
+        } else {
+          setSlotsError(
+            errMsg || "Unable to load time slots. Please try again.",
+          );
+        }
       } finally {
         if (isMounted) {
           setLoadingSlots(false);
@@ -279,7 +335,7 @@ export default function BookingPage() {
     return () => {
       isMounted = false;
     };
-  }, [serviceSlug, citySlug, selectedIsoDate]);
+  }, [serviceSlug, citySlug, selectedIsoDate, activeAddress.city]);
 
   const handleCustomerChange = (
     field: keyof CustomerDetails,
@@ -287,12 +343,19 @@ export default function BookingPage() {
   ) => {
     setCustomer((current) => ({ ...current, [field]: value }));
     if (field === "city") {
+      // If city changed, reset schedule slot and persist selected city
       setSchedule((current) => ({
         ...current,
         slot: "",
         slotStart: undefined,
         slotEnd: undefined,
       }));
+      const matched = availableCities.find(
+        (c) => c.name.toLowerCase() === value.toLowerCase(),
+      );
+      if (matched) {
+        setStoredCity(matched.slug, matched.name);
+      }
     }
   };
 
@@ -312,6 +375,12 @@ export default function BookingPage() {
         address: address.fullAddress,
         city: address.city,
       }));
+      const matched = availableCities.find(
+        (c) => c.name.toLowerCase() === address.city.toLowerCase(),
+      );
+      if (matched) {
+        setStoredCity(matched.slug, matched.name);
+      }
     }
   };
 
@@ -387,11 +456,13 @@ export default function BookingPage() {
             undefined,
         },
       });
+
       const confirmedSlot = formatSlotDisplay({
         startTime: result.slot.startTime,
         endTime: result.slot.endTime,
         available: false,
       });
+
       const confirmedSchedule: Schedule = {
         ...schedule,
         isoDate: result.date,
@@ -399,23 +470,27 @@ export default function BookingPage() {
         slotStart: result.slot.startTime,
         slotEnd: result.slot.endTime,
       };
+
       const confirmedAddress: Address = {
         ...activeAddress,
         fullAddress: result.address.line,
         city: result.address.city,
         landmark: result.address.notes ?? activeAddress.landmark,
       };
+
       const confirmedCustomer: CustomerDetails = {
         ...customer,
         fullName: result.customer.name,
         phone: result.customer.phone,
         email: result.customer.email ?? customer.email,
       };
+
+      // Snapshot booking details before clearing cart so ConfirmationStep remains intact
       const snapshot: BookingSnapshot = {
         id: result.id,
         bookingId: result.bookingNumber,
         status: result.status,
-        items,
+        items: [service],
         address: confirmedAddress,
         schedule: confirmedSchedule,
         customer: confirmedCustomer,
@@ -423,6 +498,10 @@ export default function BookingPage() {
       };
 
       setBooking(snapshot);
+
+      // Safe cart clear ONLY after confirmed API success
+      clearCart();
+
       setStep(4);
     } catch (error) {
       if (error instanceof MahirApiError && error.status === 401) {
@@ -452,8 +531,9 @@ export default function BookingPage() {
         );
         setStep(2);
       } else {
+        const msg = error instanceof Error ? error.message : "";
         setSubmissionError(
-          "We could not confirm your booking. Please check your details and try again.",
+          msg || "We could not confirm your booking. Please check your details and try again.",
         );
       }
     } finally {
@@ -531,6 +611,21 @@ export default function BookingPage() {
     );
   }
 
+  // If at step 4 (confirmation), render confirmation even though cart was cleared
+  if (step === 4 && booking) {
+    return (
+      <>
+        <SiteHeader />
+        <main className="bg-background pb-24">
+          <div className="site-container py-8 sm:py-12">
+            <ConfirmationStep booking={booking} />
+          </div>
+        </main>
+        <SiteFooter />
+      </>
+    );
+  }
+
   if (!items.length) {
     return (
       <>
@@ -548,7 +643,7 @@ export default function BookingPage() {
                 Your booking starts with a service
               </h1>
               <p className="mt-4 text-base leading-7 text-muted">
-                Add a service to your cart before choosing a date and address.
+                Select a service to get started with your appointment.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
                 <Link
@@ -556,12 +651,6 @@ export default function BookingPage() {
                   className="inline-flex min-h-12 items-center justify-center rounded-xl bg-brand px-6 text-base font-semibold text-white transition-colors hover:bg-brand-dark"
                 >
                   Browse Services
-                </Link>
-                <Link
-                  href="/cart"
-                  className="inline-flex min-h-12 items-center justify-center rounded-xl border border-line bg-white px-6 text-base font-semibold text-foreground transition-colors hover:border-brand hover:text-brand"
-                >
-                  View Cart
                 </Link>
               </div>
             </div>
@@ -591,6 +680,7 @@ export default function BookingPage() {
                   showNewAddress={usingNewAddress}
                   addressesLoading={savedAddressesLoading}
                   addressesError={savedAddressesError}
+                  cities={availableCities}
                   onRetryAddresses={() =>
                     setSavedAddressesReload((count) => count + 1)
                   }
@@ -652,9 +742,6 @@ export default function BookingPage() {
                   isSubmitting={isSubmitting}
                   submissionError={submissionError}
                 />
-              ) : null}
-              {step === 4 && booking ? (
-                <ConfirmationStep booking={booking} />
               ) : null}
             </div>
           </div>

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/components/cart/cart-context";
 import { ServiceCard } from "@/components/services/service-card";
 import { TrustSection } from "@/components/services/trust-section";
@@ -73,8 +74,14 @@ type ServiceDetailPageProps = {
 };
 
 export function ServiceDetailPage({ service }: ServiceDetailPageProps) {
+  const router = useRouter();
   const { addItem, getItemBySlug } = useCart();
   const cartItem = getItemBySlug(service.slug);
+
+  const handleBookNow = () => {
+    handleAddService();
+    router.push("/booking");
+  };
 
   const handleAddService = () => {
     addItem({
@@ -218,7 +225,7 @@ export function ServiceDetailPage({ service }: ServiceDetailPageProps) {
                   {cartItem ? (
                     <Link
                       href="/cart"
-                      className="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl bg-brand px-5 text-base font-semibold text-white transition-colors hover:bg-brand-dark"
+                      className="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl border border-line bg-white px-5 text-base font-semibold text-foreground transition-colors hover:border-brand hover:text-brand"
                     >
                       View Cart
                     </Link>
@@ -226,17 +233,27 @@ export function ServiceDetailPage({ service }: ServiceDetailPageProps) {
                     <button
                       type="button"
                       onClick={handleAddService}
-                      className="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl bg-brand px-5 text-base font-semibold text-white transition-colors hover:bg-brand-dark"
+                      className="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl border border-line bg-white px-5 text-base font-semibold text-foreground transition-colors hover:border-brand hover:text-brand cursor-pointer"
                     >
                       Add Service
                     </button>
                   )}
-                  <Link
-                    href="/cart"
-                    className="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl border border-line bg-white px-5 text-base font-semibold text-foreground transition-colors hover:border-brand hover:text-brand"
-                  >
-                    {cartItem ? "Review Cart" : "Book Now"}
-                  </Link>
+                  {cartItem ? (
+                    <Link
+                      href="/booking"
+                      className="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl bg-brand px-5 text-base font-semibold text-white transition-colors hover:bg-brand-dark"
+                    >
+                      Proceed to Booking
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleBookNow}
+                      className="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl bg-brand px-5 text-base font-semibold text-white transition-colors hover:bg-brand-dark cursor-pointer"
+                    >
+                      Book Now
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -419,20 +436,37 @@ export function ServiceDetailPage({ service }: ServiceDetailPageProps) {
               </p>
             </div>
             {cartItem ? (
-              <Link
-                href="/cart"
-                className="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl bg-brand px-5 text-base font-semibold text-white transition-colors hover:bg-brand-dark"
-              >
-                View Cart
-              </Link>
+              <div className="flex flex-1 items-center gap-2">
+                <Link
+                  href="/cart"
+                  className="inline-flex min-h-12 items-center justify-center rounded-xl border border-line bg-white px-3 text-sm font-semibold text-foreground transition-colors hover:border-brand hover:text-brand"
+                >
+                  Cart
+                </Link>
+                <Link
+                  href="/booking"
+                  className="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-dark"
+                >
+                  Book Now
+                </Link>
+              </div>
             ) : (
-              <button
-                type="button"
-                onClick={handleAddService}
-                className="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl bg-brand px-5 text-base font-semibold text-white transition-colors hover:bg-brand-dark"
-              >
-                Add Service
-              </button>
+              <div className="flex flex-1 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleAddService}
+                  className="inline-flex min-h-12 items-center justify-center rounded-xl border border-line bg-white px-3 text-sm font-semibold text-foreground transition-colors hover:border-brand hover:text-brand cursor-pointer"
+                >
+                  Add
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBookNow}
+                  className="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-dark cursor-pointer"
+                >
+                  Book Now
+                </button>
+              </div>
             )}
           </div>
         </div>

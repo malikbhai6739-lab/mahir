@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { DirectoryService } from "@/data/services";
 import type { WordPressCategory } from "@/lib/mahir-api";
+import { getStoredCity, setStoredCity } from "@/lib/city-storage";
 
 type HeroSearchProps = {
   cities: readonly string[];
@@ -114,6 +115,14 @@ export function HeroSearch({
 }: HeroSearchProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<DirectoryService | null>(null);
+  const [selectedCity, setSelectedCity] = useState(() => {
+    const stored = getStoredCity();
+    if (stored) {
+      const match = cities.find((c) => c.toLowerCase() === stored.name.toLowerCase());
+      if (match) return match;
+    }
+    return cities[0] || "Lahore";
+  });
   const [validationError, setValidationError] = useState(false);
   const [searchFilter, setSearchFilter] = useState("");
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
@@ -186,6 +195,9 @@ export function HeroSearch({
   };
 
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    if (selectedCity) {
+      setStoredCity(selectedCity.toLowerCase().replace(/\s+/g, "-"), selectedCity);
+    }
     if (!selectedService) {
       e.preventDefault();
       setValidationError(true);
@@ -276,7 +288,12 @@ export function HeroSearch({
           </span>
           <select
             name="city"
-            defaultValue="Lahore"
+            value={selectedCity}
+            onChange={(e) => {
+              const val = e.target.value;
+              setSelectedCity(val);
+              setStoredCity(val.toLowerCase().replace(/\s+/g, "-"), val);
+            }}
             className="h-13 w-full rounded-xl border border-line bg-background px-4 text-base font-medium text-foreground outline-none transition-colors focus:border-brand cursor-pointer"
           >
             {cities.map((city) => (

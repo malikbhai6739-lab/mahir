@@ -20,10 +20,9 @@ export const mobileNavigationItems: NavigationItem[] = [
 
 export const cities = [
   "Lahore",
+  "Karachi",
   "Islamabad",
   "Rawalpindi",
-  "Karachi",
-  "Faisalabad",
   "Multan",
 ] as const;
 

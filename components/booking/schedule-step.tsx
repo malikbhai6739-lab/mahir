@@ -57,16 +57,23 @@ export function ScheduleStep({
         <h2 className="text-lg font-bold text-foreground">Time slots</h2>
         {slotsError ? (
           <div role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-            {slotsError}
+            <p className="font-semibold">{slotsError}</p>
+            <button
+              type="button"
+              onClick={onBack}
+              className="mt-3 inline-flex items-center gap-1.5 font-semibold text-brand underline underline-offset-4 hover:text-brand-dark cursor-pointer"
+            >
+              ← Change address or city
+            </button>
           </div>
         ) : null}
         {loadingSlots ? (
           <div className="mt-4 rounded-xl border border-line bg-white p-6 text-center text-sm font-medium text-muted">
             Loading available times...
           </div>
-        ) : slots.length === 0 ? (
+        ) : slots.length === 0 && !slotsError ? (
           <div className="mt-4 rounded-xl border border-line bg-white p-6 text-center text-sm font-medium text-muted">
-            No time slots are available for this date.
+            No time slots are available for this date. Please select another date.
           </div>
         ) : (
           <div className="mt-4 grid gap-3 sm:grid-cols-2">

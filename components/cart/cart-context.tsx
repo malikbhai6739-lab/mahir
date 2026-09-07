@@ -31,6 +31,7 @@ type CartContextValue = {
   addItem: (item: CartSeed) => void;
   updateQuantity: (id: string, quantity: number) => void;
   removeItem: (id: string) => void;
+  clearCart: () => void;
   itemCount: number;
   subtotal: number;
   discount: number;
@@ -51,7 +52,14 @@ function readStoredCart(): CartLineItem[] {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (!stored) return [];
     const parsed = JSON.parse(stored) as CartLineItem[];
-    return Array.isArray(parsed) ? parsed : [];
+    // Enforce single-service architecture on read: keep at most 1 item with quantity 1
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      const first = parsed[0];
+      if (first && typeof first.slug === "string") {
+        return [{ ...first, quantity: 1 }];
+      }
+    }
+    return [];
   } catch {
     return [];
   }
@@ -73,35 +81,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [hydrated, items]);
 
+  // Under Mahir single-service booking model, adding a service deterministically replaces
+  // any previous service in the cart with quantity 1.
   const addItem = (item: CartSeed) => {
-    setItems((current) => {
-      const existing = current.find((entry) => entry.slug === item.slug || entry.id === item.id);
-
-      if (!existing) {
-        return [
-          ...current,
-          {
-            ...item,
-            quantity: 1,
-          },
-        ];
-      }
-
-      return current.map((entry) =>
-        entry.slug === item.slug || entry.id === item.id
-          ? { ...entry, quantity: entry.quantity + 1 }
-          : entry,
-      );
-    });
+    setItems([
+      {
+        ...item,
+        quantity: 1,
+      },
+    ]);
   };
 
-  const updateQuantity = (id: string, quantity: number) => {
+  const updateQuantity = (id: string) => {
+    // In single-service model, quantity is always strictly 1
     setItems((current) =>
-      current
-        .map((entry) =>
-          entry.id === id ? { ...entry, quantity: Math.max(1, quantity) } : entry,
-        )
-        .filter((entry) => entry.quantity > 0),
+      current.map((entry) =>
+        entry.id === id ? { ...entry, quantity: 1 } : entry,
+      ),
     );
   };
 
@@ -109,8 +105,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setItems((current) => current.filter((entry) => entry.id !== id));
   };
 
+  const clearCart = () => {
+    setItems([]);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        // Gracefully ignore storage errors
+      }
+    }
+  };
+
+  // Pricing:
+  // - originalSubtotal: sum of (originalPrice ?? price)
+  // - discount: sum of (originalPrice - price) when originalPrice > price
+  // - estimatedTotal: sum of current price (never double-subtracts discount)
   const subtotal = useMemo(
-    () => items.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    () =>
+      items.reduce(
+        (sum, item) =>
+          sum + (item.originalPrice ?? item.price) * item.quantity,
+        0,
+      ),
     [items],
   );
 
@@ -123,7 +139,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [items],
   );
 
-  const estimatedTotal = Math.max(subtotal - discount, 0);
+  const estimatedTotal = useMemo(
+    () => items.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    [items],
+  );
 
   const value = useMemo<CartContextValue>(
     () => ({
@@ -131,7 +150,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       addItem,
       updateQuantity,
       removeItem,
-      itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
+      clearCart,
+      itemCount: items.length,
       subtotal,
       discount,
       estimatedTotal,

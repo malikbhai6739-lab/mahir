@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { NavigationItem } from "@/data/homepage";
 import { HeaderAuthLink } from "@/components/layout/header-auth-link";
+import { useCart } from "@/components/cart/cart-context";
 
 type MobileMenuProps = {
   items: NavigationItem[];
@@ -11,6 +12,8 @@ type MobileMenuProps = {
 
 export function MobileMenu({ items }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const { itemCount, hydrated } = useCart();
+  const count = hydrated ? itemCount : 0;
   const triggerRef = useRef<HTMLButtonElement>(null);
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
 
@@ -79,6 +82,42 @@ export function MobileMenu({ items }: MobileMenuProps) {
             className="fixed inset-x-5 top-[5.5rem] z-50 max-h-[calc(100dvh-7rem)] overflow-y-auto rounded-2xl border border-line bg-white p-3 shadow-card md:left-auto md:right-8 md:w-96"
           >
             <ul className="space-y-1">
+              {/* Cart link at top of mobile menu */}
+              <li>
+                <Link
+                  href="/cart"
+                  onClick={() => setIsOpen(false)}
+                  className="flex min-h-12 items-center justify-between rounded-xl px-4 font-semibold text-brand transition-colors hover:bg-brand-soft"
+                >
+                  <span className="flex items-center gap-2">
+                    <svg
+                      className="size-5 shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2}
+                      stroke="currentColor"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"
+                      />
+                    </svg>
+                    Cart
+                  </span>
+                  {count > 0 ? (
+                    <span className="rounded-full bg-brand px-2 py-0.5 text-xs font-bold text-white">
+                      {count}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted">Empty</span>
+                  )}
+                </Link>
+              </li>
+
+              <li className="border-t border-line/60 my-1" />
+
               {items.map((item, index) => (
                 <li
                   key={item.label}

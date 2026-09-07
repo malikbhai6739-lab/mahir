@@ -3,6 +3,7 @@ import { mobileNavigationItems, navigationItems } from "@/data/homepage";
 import { BrandLogo } from "@/components/ui/brand-logo";
 import { MobileMenu } from "@/components/layout/mobile-menu";
 import { HeaderAuthLink } from "@/components/layout/header-auth-link";
+import { HeaderCartLink } from "@/components/layout/header-cart-link";
 
 export function SiteHeader() {
   return (
@@ -32,6 +33,7 @@ export function SiteHeader() {
           <HeaderAuthLink
             className="hidden whitespace-nowrap rounded-xl px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-brand-soft hover:text-brand min-[1200px]:inline-flex"
           />
+          <HeaderCartLink />
           <Link
             href="/#booking"
             aria-label="Book a Service"

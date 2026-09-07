@@ -5,14 +5,13 @@ const priceFormatter = new Intl.NumberFormat("en-PK");
 
 type CartItemProps = {
   item: CartLineItem;
-  onIncrease: (id: string) => void;
-  onDecrease: (id: string) => void;
+  onIncrease?: (id: string) => void;
+  onDecrease?: (id: string) => void;
   onRemove: (id: string) => void;
 };
 
-export function CartItem({ item, onIncrease, onDecrease, onRemove }: CartItemProps) {
+export function CartItem({ item, onRemove }: CartItemProps) {
   const unitPrice = item.price;
-  const lineTotal = unitPrice * item.quantity;
 
   return (
     <article className="flex w-full flex-col gap-4 rounded-[1.5rem] border border-line bg-white p-4 shadow-card sm:p-5 lg:flex-row lg:items-center lg:justify-between">
@@ -40,7 +39,7 @@ export function CartItem({ item, onIncrease, onDecrease, onRemove }: CartItemPro
             <span className="font-bold text-foreground">
               PKR {priceFormatter.format(unitPrice)}
             </span>
-            {item.originalPrice ? (
+            {item.originalPrice && item.originalPrice > item.price ? (
               <span className="text-muted line-through">
                 PKR {priceFormatter.format(item.originalPrice)}
               </span>
@@ -49,38 +48,19 @@ export function CartItem({ item, onIncrease, onDecrease, onRemove }: CartItemPro
         </div>
       </div>
 
-      <div className="flex items-center justify-between gap-3 lg:min-w-[290px] lg:justify-end">
-        <div className="inline-flex items-center rounded-xl border border-line bg-background">
-          <button
-            type="button"
-            aria-label={`Decrease quantity for ${item.title}`}
-            onClick={() => onDecrease(item.id)}
-            disabled={item.quantity <= 1}
-            className="grid size-11 place-items-center text-xl font-semibold text-foreground transition-colors hover:text-brand disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            −
-          </button>
-          <span className="min-w-12 text-center text-base font-semibold text-foreground">
-            {item.quantity}
-          </span>
-          <button
-            type="button"
-            aria-label={`Increase quantity for ${item.title}`}
-            onClick={() => onIncrease(item.id)}
-            className="grid size-11 place-items-center text-xl font-semibold text-foreground transition-colors hover:text-brand"
-          >
-            +
-          </button>
-        </div>
+      <div className="flex items-center justify-between gap-4 border-t border-line/60 pt-3 lg:border-t-0 lg:pt-0 lg:min-w-[220px] lg:justify-end">
+        <span className="rounded-xl border border-line/70 bg-brand-soft/60 px-3 py-1.5 text-xs font-semibold text-brand">
+          1 service visit
+        </span>
 
         <div className="min-w-[110px] text-right">
           <p className="text-lg font-bold tracking-[-0.02em] text-foreground">
-            PKR {priceFormatter.format(lineTotal)}
+            PKR {priceFormatter.format(unitPrice)}
           </p>
           <button
             type="button"
             onClick={() => onRemove(item.id)}
-            className="mt-2 text-sm font-semibold text-muted transition-colors hover:text-brand"
+            className="mt-2 text-sm font-semibold text-muted transition-colors hover:text-red-600"
           >
             Remove
           </button>
