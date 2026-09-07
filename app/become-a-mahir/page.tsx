@@ -9,15 +9,15 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: "Become a Mahir | Partner with Pakistan's Trusted Home Services Platform",
+  title: "Become a Mahir | Partner with Mahir Company",
   description:
-    "Join Mahir Company as a professional service provider. Get verified customer bookings, transparent earnings, flexible schedule, and weekly payouts across Pakistan.",
+    "Join Mahir Company as a skilled home-service professional. Connect with customer service requests in supported cities across Pakistan.",
 };
 
 const benefits = [
   {
-    title: "Consistent Customer Leads",
-    desc: "Get real, verified booking requests in your chosen city and category without spending money on marketing.",
+    title: "Customer Service Requests",
+    desc: "Connect with real customer booking requests in your chosen city and category without spending money on marketing.",
     icon: "📈",
   },
   {
@@ -27,12 +27,12 @@ const benefits = [
   },
   {
     title: "Transparent Service Rates",
-    desc: "Clear service pricing and transparent earnings for every completed customer visit without hidden fees.",
+    desc: "Clear service pricing for completed customer visits without hidden terms.",
     icon: "💳",
   },
   {
     title: "Dedicated Partner Support",
-    desc: "Our partner operations team assists you with job dispatch, customer coordination, and issue resolution.",
+    desc: "Our partner operations team assists you with job coordination, customer communication, and issue resolution.",
     icon: "🤝",
   },
 ];
@@ -55,8 +55,8 @@ const steps = [
   },
   {
     step: "04",
-    title: "Receive Jobs & Earn",
-    desc: "Get assigned customer bookings in your city, deliver great service, and grow your revenue.",
+    title: "Receive Jobs",
+    desc: "Get assigned customer bookings based on eligibility, deliver great service, and grow your service business.",
   },
 ];
 
@@ -64,26 +64,26 @@ const requirements = [
   "Valid Pakistani CNIC (National Identity Card)",
   "Proven hands-on experience in your trade (AC, Plumbing, Electrical, etc.)",
   "Standard trade tools, safety gear, and reliable transportation",
-  "Smartphone with active WhatsApp for job notifications",
+  "Reliable mobile phone and reachable contact number for service coordination",
   "Commitment to punctuality, polite customer interaction, and clean work",
 ];
 
 const faqs = [
   {
     q: "Is there any fee to register as a Mahir?",
-    a: "No. Applying and getting verified on the Mahir platform is 100% free. We never charge an upfront registration fee.",
+    a: "There is no fee to submit a Mahir application.",
   },
   {
     q: "How long does the application review take?",
-    a: "Our partner onboarding specialists review applications within 24 to 48 hours. You will be contacted via phone or WhatsApp.",
+    a: "Our team reviews applications and contacts suitable candidates for the next onboarding steps.",
   },
   {
     q: "How are jobs assigned?",
-    a: "Jobs are matched based on your verified service category, your operating city, and your proximity to customer booking requests.",
+    a: "Jobs are assigned based on service requirements, operating city, technician eligibility, and availability.",
   },
   {
     q: "Can I do Mahir work part-time?",
-    a: "Yes. Many of our partner technicians balance their own private clients while taking high-value Mahir jobs during their available hours.",
+    a: "Availability and working arrangements can be discussed during onboarding.",
   },
 ];
 
@@ -107,12 +107,10 @@ export default async function BecomeMahirPage() {
               </span>
               <h1 className="mt-6 text-balance text-4xl font-extrabold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
                 Partner with Mahir.{" "}
-                <span className="text-brand">Grow Your Earnings.</span>
+                <span className="text-brand">Grow Your Service Business.</span>
               </h1>
               <p className="mt-6 text-balance text-base text-muted sm:text-lg sm:leading-8">
-                Join Pakistan&apos;s most trusted network of home service professionals.
-                Connect with thousands of households needing AC, electrical, plumbing,
-                and repair experts every day.
+                Mahir connects skilled home-service professionals with customer service requests in supported cities.
               </p>
 
               <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -137,7 +135,7 @@ export default async function BecomeMahirPage() {
                   <div className="mt-1 text-xs font-medium text-muted">Quality-first service platform</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-base font-bold text-brand sm:text-lg">Direct Leads</div>
+                  <div className="text-base font-bold text-brand sm:text-lg">Service Requests</div>
                   <div className="mt-1 text-xs font-medium text-muted">Customer requests in your city</div>
                 </div>
                 <div className="text-center">
@@ -146,7 +144,7 @@ export default async function BecomeMahirPage() {
                 </div>
                 <div className="text-center">
                   <div className="text-base font-bold text-brand sm:text-lg">Free Application</div>
-                  <div className="mt-1 text-xs font-medium text-muted">Zero registration fee</div>
+                  <div className="mt-1 text-xs font-medium text-muted">No application fee</div>
                 </div>
               </div>
             </div>
@@ -158,10 +156,10 @@ export default async function BecomeMahirPage() {
           <div className="site-container">
             <div className="mx-auto max-w-2xl text-center">
               <p className="text-xs font-bold uppercase tracking-wider text-brand">
-                Why Top Technicians Choose Us
+                Partner Opportunities
               </p>
               <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-                Built to help skilled professionals thrive
+                Supporting skilled service professionals
               </h2>
             </div>
 
@@ -221,7 +219,7 @@ export default async function BecomeMahirPage() {
                   Requirements & Eligibility
                 </h2>
                 <p className="mt-3 text-sm text-muted">
-                  To maintain the highest level of customer trust across Pakistan, every Mahir technician must meet our core standards:
+                  To maintain service quality and reliability, every Mahir applicant must meet our core standards:
                 </p>
 
                 <ul className="mt-6 space-y-3">
@@ -295,7 +293,7 @@ export default async function BecomeMahirPage() {
                   Ready to join as a service partner?
                 </h2>
                 <p className="mt-3 text-sm text-muted">
-                  Fill out the form below. Our team reviews all applications and contacts qualified candidates within 24 to 48 hours.
+                  Fill out the form below. Our team reviews applications and contacts suitable candidates for the next onboarding steps.
                 </p>
               </div>
 

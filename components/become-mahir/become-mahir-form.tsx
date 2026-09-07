@@ -124,7 +124,7 @@ export function BecomeMahirForm({ categories, cities }: Props) {
             </li>
             <li className="flex items-start gap-2">
               <span className="font-bold text-emerald-600">2.</span>
-              You will receive a call or WhatsApp verification message within 24 to 48 hours.
+              Our team reviews your submission and contacts suitable candidates for the next onboarding steps.
             </li>
             <li className="flex items-start gap-2">
               <span className="font-bold text-emerald-600">3.</span>
