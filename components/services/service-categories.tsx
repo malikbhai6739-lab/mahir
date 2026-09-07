@@ -1,40 +1,11 @@
-import Link from "next/link";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { serviceToneStyles } from "@/components/services/service-tone-styles";
 import type { ServiceFilters } from "@/data/services";
 import { getWordPressCategories } from "@/lib/mahir-api";
+import { CategoryCard } from "@/components/home/category-card";
 
 type ServiceCategoriesProps = {
   filters: ServiceFilters;
 };
-
-const tones = [
-  "blue",
-  "cyan",
-  "amber",
-  "green",
-  "violet",
-  "orange",
-  "rose",
-  "slate",
-] as const;
-
-function getCategoryCode(name: string) {
-  const words = name
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-
-  if (!words.length) {
-    return "MS";
-  }
-
-  if (words.length === 1) {
-    return words[0].slice(0, 2).toUpperCase();
-  }
-
-  return `${words[0][0]}${words[1][0]}`.toUpperCase();
-}
 
 function buildCategoryHref(
   category: string,
@@ -64,6 +35,16 @@ export async function ServiceCategories({
     return null;
   }
 
+  // Responsive layout adaptation based on available category count
+  let gridLayoutClass = "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4";
+  if (categories.length === 1) {
+    gridLayoutClass = "grid-cols-1 max-w-md";
+  } else if (categories.length === 2) {
+    gridLayoutClass = "grid-cols-1 sm:grid-cols-2 max-w-[880px]";
+  } else if (categories.length === 3) {
+    gridLayoutClass = "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-6xl";
+  }
+
   return (
     <section
       aria-labelledby="service-categories-heading"
@@ -81,70 +62,16 @@ export async function ServiceCategories({
           aria-label="Service categories"
           className="mt-10"
         >
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {categories.map((category, index) => {
-              const isActive =
-                filters.category === category.slug;
-
-              const tone =
-                tones[index % tones.length];
-
-              const code =
-                getCategoryCode(category.name);
-
-              return (
-                <li
-                  key={category.id}
-                  className="min-w-0"
-                >
-                  <Link
-                    href={buildCategoryHref(
-                      category.slug,
-                      filters,
-                    )}
-                    aria-current={
-                      isActive ? "page" : undefined
-                    }
-                    className={`group flex h-full min-h-44 flex-col rounded-[1.35rem] border p-4 transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-1 hover:border-brand/30 hover:shadow-card sm:p-5 ${
-                      isActive
-                        ? "border-brand/40 bg-white shadow-card"
-                        : "border-line bg-white"
-                    }`}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={`grid size-11 place-items-center rounded-2xl text-sm font-black tracking-[-0.02em] ${serviceToneStyles[tone]}`}
-                    >
-                      {code}
-                    </span>
-
-                    <h3 className="mt-5 text-lg font-semibold leading-6 tracking-[-0.01em] text-foreground">
-                      {category.name}
-                    </h3>
-
-                    <p className="mt-2 flex-1 text-sm leading-6 text-muted">
-                      {category.description ||
-                        "Professional Mahir home services."}
-                    </p>
-
-                    <span className="mt-4 flex items-center justify-between border-t border-line pt-3 text-xs font-semibold uppercase tracking-[0.08em] text-muted">
-                      {category.count}{" "}
-                      {category.count === 1
-                        ? "service"
-                        : "services"}
-
-                      <span
-                        aria-hidden="true"
-                        className="text-base text-brand transition-transform group-hover:translate-x-1"
-                      >
-                        →
-                      </span>
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+          <div className={`grid gap-6 sm:gap-7 lg:gap-8 ${gridLayoutClass}`}>
+            {categories.map((category) => (
+              <CategoryCard
+                key={category.id}
+                category={category}
+                href={buildCategoryHref(category.slug, filters)}
+                isActive={filters.category === category.slug}
+              />
+            ))}
+          </div>
         </nav>
       </div>
     </section>

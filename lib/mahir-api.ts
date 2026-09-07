@@ -54,7 +54,15 @@ export type WordPressCategory = {
   slug: string;
   description: string;
   count: number;
+  services_count?: number;
   parent: number;
+  image?: string | null;
+  image_id?: number | null;
+  cities?: Array<{
+    id: number;
+    name: string;
+    slug: string;
+  }>;
 };
 
 type ServicesApiResponse = {
