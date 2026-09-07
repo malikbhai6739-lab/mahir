@@ -82,7 +82,8 @@ export function BecomeMahirForm({ categories, cities }: Props) {
 
       setSuccessInfo({
         applicationId: res.application_id,
-        message: res.message || "Your application has been received successfully!",
+        message:
+          "Your application has been received successfully. Our team will review your application and contact suitable candidates for the next onboarding steps.",
       });
       setFormData(initialFormData);
     } catch (err: unknown) {
