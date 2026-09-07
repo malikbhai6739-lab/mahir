@@ -38,6 +38,14 @@ export function FinalCta() {
         <p className="mt-7 text-sm text-white/85">
           Service professional? <span className="font-semibold text-white">Become a Mahir</span>
           {" "}and grow with a trusted platform.
+          Service professional?{" "}
+          <Link
+            href="/become-a-mahir"
+            className="font-semibold text-white underline underline-offset-4 hover:text-white/90"
+          >
+            Become a Mahir
+          </Link>{" "}
+          and grow with a trusted platform.
         </p>
       </div>
     </section>

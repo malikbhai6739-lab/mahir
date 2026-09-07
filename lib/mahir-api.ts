@@ -1678,3 +1678,73 @@ export async function getCurrentCustomer(): Promise<AuthCustomer | null> {
     throw error;
   }
 }
+
+export type TechnicianApplicationPayload = {
+  fullName: string;
+  phone: string;
+  email?: string;
+  categoryId: number;
+  cityId: number;
+  experienceYears?: number;
+  notes?: string;
+};
+
+export type TechnicianApplicationResponse = {
+  success: boolean;
+  message: string;
+  application_id?: number;
+};
+
+export async function submitTechnicianApplication(
+  payload: TechnicianApplicationPayload,
+): Promise<TechnicianApplicationResponse> {
+  const url = `${MAHIR_API_URL}/technician-applications`;
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        full_name: payload.fullName.trim(),
+        phone: payload.phone.trim(),
+        email: payload.email?.trim() || undefined,
+        category_id: payload.categoryId,
+        city_id: payload.cityId,
+        experience_years: payload.experienceYears,
+        notes: payload.notes?.trim() || undefined,
+      }),
+    });
+  } catch (error) {
+    throw new MahirApiError(
+      error instanceof Error
+        ? error.message
+        : "Network error occurred while submitting your application.",
+      0,
+    );
+  }
+
+  let result: (TechnicianApplicationResponse & { code?: string }) | null = null;
+  try {
+    result = (await response.json()) as TechnicianApplicationResponse & {
+      code?: string;
+    };
+  } catch {
+    throw new MahirApiError(
+      `Invalid server response (${response.status}).`,
+      response.status,
+    );
+  }
+
+  if (!response.ok || !result || result.success === false) {
+    throw new MahirApiError(
+      result?.message || `Failed to submit application (${response.status}).`,
+      response.status,
+      result?.code,
+    );
+  }
+
+  return result;
+}

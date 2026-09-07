@@ -9,6 +9,7 @@ export const navigationItems: NavigationItem[] = [
   { label: "Cities", href: "/#city-search" },
   { label: "For Business", href: "/#business" },
   { label: "Become a Mahir", href: "/#become-mahir" },
+  { label: "Become a Mahir", href: "/become-a-mahir" },
   { label: "Help", href: "/#faq" },
 ];
 
@@ -266,6 +267,7 @@ export const footerGroups = [
       { label: "How It Works", href: "/#how-it-works" },
       { label: "Mahir for Business", href: "/#business" },
       { label: "Become a Mahir", href: "/#become-mahir" },
+      { label: "Become a Mahir", href: "/become-a-mahir" },
       { label: "Home Care Guides", href: "/#guides" },
     ],
   },
