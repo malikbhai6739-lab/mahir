@@ -58,7 +58,7 @@ export function BusinessCta() {
 
             <div className="mt-8 pt-4 lg:mt-10">
               <Link
-                href="#booking"
+                href="/for-business"
                 className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-brand px-6 text-sm font-semibold text-white shadow-md shadow-brand/20 transition-colors hover:bg-brand-dark sm:w-auto sm:text-base"
               >
                 Talk to Mahir Business Team <span aria-hidden="true">&rarr;</span>

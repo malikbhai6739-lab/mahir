@@ -1748,3 +1748,93 @@ export async function submitTechnicianApplication(
 
   return result;
 }
+
+export type BusinessType =
+  | "office"
+  | "retail"
+  | "property_management"
+  | "hospitality"
+  | "healthcare"
+  | "education"
+  | "other";
+
+export type LocationsRange = "1" | "2-5" | "6-10" | "11-25" | "25+";
+
+export type RequirementType = "one-time" | "recurring" | "both";
+
+export type BusinessEnquiryPayload = {
+  companyName: string;
+  contactName: string;
+  email: string;
+  phone: string;
+  businessType: BusinessType;
+  cityId: number;
+  locationsRange: LocationsRange;
+  categoryIds: number[];
+  requirementType: RequirementType;
+  notes: string;
+};
+
+export type BusinessEnquiryResponse = {
+  success: boolean;
+  message: string;
+  enquiry_id?: number;
+  reference?: string;
+};
+
+export async function submitBusinessEnquiry(
+  payload: BusinessEnquiryPayload,
+): Promise<BusinessEnquiryResponse> {
+  const url = `${MAHIR_API_URL}/business-enquiries`;
+
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        company_name: payload.companyName.trim(),
+        contact_name: payload.contactName.trim(),
+        email: payload.email.trim(),
+        phone: payload.phone.trim(),
+        business_type: payload.businessType,
+        city_id: payload.cityId,
+        locations_range: payload.locationsRange,
+        category_ids: payload.categoryIds,
+        requirement_type: payload.requirementType,
+        notes: payload.notes.trim(),
+      }),
+    });
+  } catch (error) {
+    throw new MahirApiError(
+      error instanceof Error
+        ? error.message
+        : "Network error occurred while submitting your business enquiry.",
+      0,
+    );
+  }
+
+  let result: (BusinessEnquiryResponse & { code?: string }) | null = null;
+  try {
+    result = (await response.json()) as BusinessEnquiryResponse & {
+      code?: string;
+    };
+  } catch {
+    throw new MahirApiError(
+      `Invalid server response (${response.status}).`,
+      response.status,
+    );
+  }
+
+  if (!response.ok || !result || result.success === false) {
+    throw new MahirApiError(
+      result?.message || `Failed to submit enquiry (${response.status}).`,
+      response.status,
+      result?.code,
+    );
+  }
+
+  return result;
+}
