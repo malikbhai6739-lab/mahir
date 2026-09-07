@@ -1,7 +1,14 @@
 import Image from "next/image";
 import { cities, trustIndicators } from "@/data/homepage";
+import { getWordPressServices, getWordPressCategories } from "@/lib/mahir-api";
+import { HeroSearch } from "@/components/home/hero-search";
 
-export function Hero() {
+export async function Hero() {
+  const [services, categories] = await Promise.all([
+    getWordPressServices(),
+    getWordPressCategories(),
+  ]);
+
   return (
     <section id="booking" className="relative overflow-hidden bg-white">
       <div className="site-container grid gap-12 py-14 lg:grid-cols-[1.08fr_0.92fr] lg:items-center lg:gap-14 lg:py-20 xl:py-24">
@@ -20,47 +27,11 @@ export function Hero() {
             maintenance—at a time that works for you.
           </p>
 
-          <form
-            id="city-search"
-            action="/services#all-services"
-            className="mt-8 rounded-2xl border border-line bg-white p-3 shadow-card sm:p-4"
-          >
-            <div className="grid gap-3 sm:grid-cols-[0.8fr_1.3fr_auto] sm:items-end">
-              <label className="block min-w-0">
-                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.1em] text-muted">
-                  Your city
-                </span>
-                <select
-                  name="city"
-                  defaultValue="Lahore"
-                  className="h-13 w-full rounded-xl border border-line bg-background px-4 text-base font-medium text-foreground outline-none transition-colors focus:border-brand"
-                >
-                  {cities.map((city) => (
-                    <option key={city}>{city}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="block min-w-0">
-                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.1em] text-muted">
-                  What do you need?
-                </span>
-                <input
-                  type="search"
-                  name="q"
-                  autoComplete="off"
-                  placeholder="Try “AC repair” or “plumber”"
-                  className="h-13 w-full rounded-xl border border-line bg-background px-4 text-base text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-brand"
-                />
-              </label>
-              <button
-                type="submit"
-                className="inline-flex h-13 items-center justify-center gap-2 rounded-xl bg-brand px-6 text-base font-semibold text-white transition-colors hover:bg-brand-dark"
-              >
-                Search
-                <span aria-hidden="true">→</span>
-              </button>
-            </div>
-          </form>
+          <HeroSearch
+            cities={cities}
+            initialServices={services}
+            initialCategories={categories}
+          />
 
           <ul className="mt-7 grid grid-cols-2 gap-x-5 gap-y-3 sm:grid-cols-4">
             {trustIndicators.map((indicator) => (
