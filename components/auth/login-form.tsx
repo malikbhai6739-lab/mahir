@@ -64,11 +64,11 @@ export function LoginForm({
 
       <p className="mt-6 text-center text-xs leading-5 text-muted">
         By continuing, you agree to our{" "}
-        <Link href="/#footer" className="font-semibold text-brand hover:text-brand-dark">
+        <Link href="/terms" className="font-semibold text-brand hover:text-brand-dark">
           Terms &amp; Conditions
         </Link>{" "}
         and{" "}
-        <Link href="/#footer" className="font-semibold text-brand hover:text-brand-dark">
+        <Link href="/privacy-policy" className="font-semibold text-brand hover:text-brand-dark">
           Privacy Policy
         </Link>
         .

@@ -1,4 +1,4 @@
-﻿import type { MetadataRoute } from "next";
+import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site-url";
 import { getWordPressServices } from "@/lib/mahir-api";
 
@@ -23,6 +23,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${SITE_URL}/for-business`,
       changeFrequency: "weekly",
       priority: 0.8,
+    },
+    {
+      url: `${SITE_URL}/privacy-policy`,
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+    {
+      url: `${SITE_URL}/terms`,
+      changeFrequency: "monthly",
+      priority: 0.5,
     },
   ];
 

@@ -103,8 +103,8 @@ export function SiteFooter() {
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pt-7 text-xs text-[#91a6ba]">
           <p>© 2026 Mahir Company. All rights reserved.</p>
           <nav aria-label="Legal links" className="flex flex-wrap gap-x-5 gap-y-2">
-            <Link href="#footer" className="transition-colors hover:text-white">Terms &amp; Conditions</Link>
-            <Link href="#footer" className="transition-colors hover:text-white">Privacy Policy</Link>
+            <Link href="/terms" className="transition-colors hover:text-white">Terms &amp; Conditions</Link>
+            <Link href="/privacy-policy" className="transition-colors hover:text-white">Privacy Policy</Link>
           </nav>
         </div>
       </div>
