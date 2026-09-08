@@ -1,16 +1,40 @@
 "use client";
 
 import Link from "next/link";
+import { useSyncExternalStore } from "react";
 import { useCart } from "@/components/cart/cart-context";
+import { getAuthToken, subscribeAuthState } from "@/lib/auth-storage";
+
+function getAuthSnapshot(): boolean {
+  return Boolean(getAuthToken());
+}
+
+function getServerAuthSnapshot(): boolean {
+  return false;
+}
 
 export function HeaderCartLink({ className = "" }: { className?: string }) {
+  const isAuthenticated = useSyncExternalStore(
+    subscribeAuthState,
+    getAuthSnapshot,
+    getServerAuthSnapshot,
+  );
   const { itemCount, hydrated } = useCart();
   const count = hydrated ? itemCount : 0;
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  const accessibleLabel =
+    count === 0
+      ? "Shopping cart"
+      : `Shopping cart, ${count} ${count === 1 ? "item" : "items"}`;
 
   return (
     <Link
       href="/cart"
-      aria-label={count > 0 ? `Shopping cart with ${count} service` : "Shopping cart is empty"}
+      aria-label={accessibleLabel}
       className={`relative inline-flex size-11 items-center justify-center rounded-xl border border-line bg-white text-foreground transition-colors hover:border-brand/40 hover:bg-brand-soft hover:text-brand ${className}`}
     >
       <svg
@@ -29,7 +53,7 @@ export function HeaderCartLink({ className = "" }: { className?: string }) {
       </svg>
       {count > 0 ? (
         <span
-          className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-brand text-[10px] font-bold text-white shadow-sm ring-2 ring-white"
+          className="pointer-events-none absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-brand text-[10px] font-bold text-white shadow-sm ring-2 ring-white"
           aria-hidden="true"
         >
           {count}
