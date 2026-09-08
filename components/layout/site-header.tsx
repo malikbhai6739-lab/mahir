@@ -39,7 +39,8 @@ export function SiteHeader() {
             aria-label="Book a Service"
             className="inline-flex min-h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-xl bg-brand px-2.5 text-[0.7rem] font-semibold text-white shadow-[0_9px_22px_rgba(11,99,206,0.22)] transition-colors hover:bg-brand-dark min-[360px]:px-3 min-[360px]:text-xs sm:px-4 sm:text-sm"
           >
-            Book a Service
+            <span className="hidden min-[360px]:inline">Book a Service</span>
+            <span className="min-[360px]:hidden">Book</span>
           </Link>
           <MobileMenu items={mobileNavigationItems} />
         </div>

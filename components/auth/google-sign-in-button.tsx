@@ -87,6 +87,36 @@ export function GoogleSignInButton({ nextPath }: GoogleSignInButtonProps) {
     [nextPath, router],
   );
 
+  const containerRef = useRef<HTMLDivElement>(null);
+  const renderedWidthRef = useRef<number | null>(null);
+
+  const renderGsiButton = useCallback((targetWidth: number) => {
+    if (!window.google?.accounts?.id || !googleButtonRef.current) return;
+
+    // Clamp width between GIS minimum (200px) and intended desktop maximum (360px)
+    const clampedWidth = Math.min(360, Math.max(200, Math.floor(targetWidth)));
+
+    if (renderedWidthRef.current === clampedWidth && googleButtonRef.current.hasChildNodes()) {
+      return;
+    }
+
+    try {
+      googleButtonRef.current.innerHTML = "";
+      window.google.accounts.id.renderButton(googleButtonRef.current, {
+        type: "standard",
+        theme: "outline",
+        size: "large",
+        text: "continue_with",
+        shape: "rectangular",
+        logo_alignment: "left",
+        width: clampedWidth,
+      });
+      renderedWidthRef.current = clampedWidth;
+    } catch {
+      // Ignore rendering errors
+    }
+  }, []);
+
   const initializeGsi = useCallback(() => {
     if (!clientId) {
       return;
@@ -103,28 +133,60 @@ export function GoogleSignInButton({ nextPath }: GoogleSignInButtonProps) {
         cancel_on_tap_outside: true,
       });
 
-      googleButtonRef.current.innerHTML = "";
-
-      window.google.accounts.id.renderButton(googleButtonRef.current, {
-        type: "standard",
-        theme: "outline",
-        size: "large",
-        text: "continue_with",
-        shape: "rectangular",
-        logo_alignment: "left",
-        width: 360,
-      });
+      const measuredWidth =
+        containerRef.current?.clientWidth ||
+        (typeof window !== "undefined" ? window.innerWidth - 88 : 360);
+      renderGsiButton(measuredWidth);
     } catch (e) {
       // Ignore initialization errors during effect execution
       void e;
     }
-  }, [clientId, handleCredentialResponse]);
+  }, [clientId, handleCredentialResponse, renderGsiButton]);
 
   useEffect(() => {
     if (scriptLoaded || window.google?.accounts?.id) {
       initializeGsi();
     }
   }, [scriptLoaded, initializeGsi]);
+
+  // Handle container resizing cleanly (orientation change or viewport resize)
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const handleResize = () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (!containerRef.current) return;
+        const currentWidth = containerRef.current.clientWidth;
+        if (currentWidth > 0) {
+          renderGsiButton(currentWidth);
+        }
+      }, 150);
+    };
+
+    let resizeObserver: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const w = entry.contentRect.width;
+          if (w > 0) {
+            handleResize();
+          }
+        }
+      });
+      resizeObserver.observe(containerRef.current);
+    } else {
+      window.addEventListener("resize", handleResize);
+    }
+
+    return () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
+      if (resizeObserver) resizeObserver.disconnect();
+      else window.removeEventListener("resize", handleResize);
+    };
+  }, [renderGsiButton]);
 
   return (
     <div className="w-full">
@@ -197,8 +259,8 @@ export function GoogleSignInButton({ nextPath }: GoogleSignInButtonProps) {
           Continue with Google
         </button>
       ) : (
-        <div className="flex w-full justify-center">
-          <div ref={googleButtonRef} className="w-full flex justify-center" />
+        <div ref={containerRef} className="flex w-full max-w-full justify-center overflow-hidden">
+          <div ref={googleButtonRef} className="flex w-full max-w-full justify-center overflow-hidden" />
         </div>
       )}
     </div>

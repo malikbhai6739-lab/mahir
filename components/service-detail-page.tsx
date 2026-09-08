@@ -445,7 +445,7 @@ export function ServiceDetailPage({ service }: ServiceDetailPageProps) {
                 </Link>
                 <Link
                   href="/booking"
-                  className="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-dark"
+                  className="inline-flex min-h-12 flex-1 items-center justify-center whitespace-nowrap rounded-xl bg-brand px-3 text-sm font-semibold text-white transition-colors hover:bg-brand-dark sm:px-4"
                 >
                   Book Now
                 </Link>
@@ -462,7 +462,7 @@ export function ServiceDetailPage({ service }: ServiceDetailPageProps) {
                 <button
                   type="button"
                   onClick={handleBookNow}
-                  className="inline-flex min-h-12 flex-1 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-dark cursor-pointer"
+                  className="inline-flex min-h-12 flex-1 items-center justify-center whitespace-nowrap rounded-xl bg-brand px-3 text-sm font-semibold text-white transition-colors hover:bg-brand-dark cursor-pointer sm:px-4"
                 >
                   Book Now
                 </button>
