@@ -9,9 +9,15 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: "For Business | Corporate Facility & Maintenance Services | Mahir Company",
+  title: {
+    absolute:
+      "For Business | Corporate Facility & Maintenance Services | Mahir Company",
+  },
   description:
     "Reliable maintenance coordination for multi-location businesses, offices, retail chains, and commercial properties across Pakistan.",
+  alternates: {
+    canonical: "/for-business",
+  },
 };
 
 const solutions = [

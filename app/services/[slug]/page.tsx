@@ -1,8 +1,10 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { ServiceDetailPage } from "@/components/service-detail-page";
+import { SITE_URL, safeJsonLdReplacer } from "@/lib/site-url";
 
 import {
   serviceDetailCatalog,
@@ -193,6 +195,67 @@ type ServiceDetailPageProps = {
   }>;
 };
 
+export async function generateMetadata({
+  params,
+}: ServiceDetailPageProps): Promise<Metadata> {
+  const { slug } = await params;
+
+  const liveServices = await getWordPressServices();
+  const liveService = liveServices.find((item) => item.slug === slug);
+
+  if (!liveService) {
+    return {
+      title: "Service Not Found",
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  const title = `${liveService.name} Services in Pakistan`;
+  const rawDesc =
+    liveService.description ||
+    `Book verified professionals for ${liveService.name} services with Mahir Company in Pakistan.`;
+  const cleanDesc = rawDesc.replace(/\s+/g, " ").trim().slice(0, 160);
+  const canonicalPath = `/services/${liveService.slug}`;
+  const absoluteUrl = `${SITE_URL}${canonicalPath}`;
+
+  return {
+    title,
+    description: cleanDesc,
+    alternates: {
+      canonical: canonicalPath,
+    },
+    openGraph: {
+      title,
+      description: cleanDesc,
+      url: absoluteUrl,
+      type: "website",
+      ...(liveService.image
+        ? {
+            images: [
+              {
+                url: liveService.image,
+                alt: liveService.name,
+              },
+            ],
+          }
+        : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: cleanDesc,
+      ...(liveService.image
+        ? {
+            images: [liveService.image],
+          }
+        : {}),
+    },
+  };
+}
+
 export default async function ServiceDetailRoutePage({
   params,
 }: ServiceDetailPageProps) {
@@ -216,8 +279,82 @@ export default async function ServiceDetailRoutePage({
       liveService,
     );
 
+  const serviceJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    name: service.title,
+    description: service.description,
+    provider: {
+      "@type": "Organization",
+      name: "Mahir Company",
+      url: SITE_URL,
+    },
+    areaServed: {
+      "@type": "Country",
+      name: "Pakistan",
+    },
+    url: `${SITE_URL}/services/${service.slug}`,
+    ...(service.image ? { image: service.image } : {}),
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: SITE_URL,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Services",
+        item: `${SITE_URL}/services`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: service.title,
+        item: `${SITE_URL}/services/${service.slug}`,
+      },
+    ],
+  };
+
+  const hasFaqs = Array.isArray(service.faqs) && service.faqs.length > 0;
+  const faqJsonLd = hasFaqs
+    ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: service.faqs.map((faq) => ({
+          "@type": "Question",
+          name: faq.question,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: faq.answer,
+          },
+        })),
+      }
+    : null;
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLdReplacer(serviceJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLdReplacer(breadcrumbJsonLd) }}
+      />
+      {faqJsonLd ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLdReplacer(faqJsonLd) }}
+        />
+      ) : null}
+
       <SiteHeader />
 
       <ServiceDetailPage

@@ -4,7 +4,13 @@ import { LoginForm } from "@/components/auth/login-form";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 
-export const metadata: Metadata = { title: "Login | Mahir Company" };
+export const metadata: Metadata = {
+  title: "Login",
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 type LoginPageProps = {
   searchParams: Promise<{ next?: string; method?: string }>;

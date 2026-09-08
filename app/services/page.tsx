@@ -16,9 +16,12 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: "All Services | Mahir Company",
+  title: "All Services",
   description:
     "Explore trusted professional home services available through Mahir Company across Pakistan.",
+  alternates: {
+    canonical: "/services",
+  },
 };
 
 type ServicesPageProps = {

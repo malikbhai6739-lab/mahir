@@ -9,9 +9,14 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: "Become a Mahir | Partner with Mahir Company",
+  title: {
+    absolute: "Become a Mahir | Partner with Mahir Company",
+  },
   description:
     "Join Mahir Company as a skilled home-service professional. Connect with customer service requests in supported cities across Pakistan.",
+  alternates: {
+    canonical: "/become-a-mahir",
+  },
 };
 
 const benefits = [

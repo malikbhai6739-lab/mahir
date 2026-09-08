@@ -10,15 +10,47 @@ import { PopularServices } from "@/components/home/popular-services";
 import { Testimonials } from "@/components/home/testimonials";
 import { WhyMahir } from "@/components/home/why-mahir";
 import { Affiliations } from "@/components/layout/affiliations";
+import type { Metadata } from "next";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
+import { SITE_URL, safeJsonLdReplacer } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+export const metadata: Metadata = {
+  alternates: {
+    canonical: "/",
+  },
+};
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Mahir Company",
+  url: SITE_URL,
+  description:
+    "Trusted home services platform in Pakistan connecting customers with verified professionals for home repairs, maintenance, and cleaning.",
+};
+
+const webSiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Mahir Company",
+  url: SITE_URL,
+};
+
 export default function HomePage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLdReplacer(organizationJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJsonLdReplacer(webSiteJsonLd) }}
+      />
       <SiteHeader />
       <main>
         <Hero />
